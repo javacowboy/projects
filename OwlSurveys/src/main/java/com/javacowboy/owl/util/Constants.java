@@ -15,7 +15,9 @@ public class Constants {
 	
 	public enum Property {
 		INPUT_DIRECTORY("input.directory"),
-		OUTPUT_DIRECTORY("output.directory");
+		OUTPUT_DIRECTORY("output.directory"),
+		OUTPUT_DATA_FILE("output.data.filename"),
+		OUTPUT_USFS_FILE("output.usfs.filename");
 		
 		private String propertyKey;
 		protected String propertyValue;
@@ -49,6 +51,8 @@ public class Constants {
 			//don't call setters or it'll trigger a properties file write
 			Property.INPUT_DIRECTORY.propertyValue = (properties.getProperty(Property.INPUT_DIRECTORY.getPropertyKey(), null));
 			Property.OUTPUT_DIRECTORY.propertyValue = (properties.getProperty(Property.OUTPUT_DIRECTORY.getPropertyKey(), null));
+			Property.OUTPUT_DATA_FILE.propertyValue = properties.getProperty(Property.OUTPUT_DATA_FILE.getPropertyKey(), "output.csv");
+			Property.OUTPUT_USFS_FILE.propertyValue = properties.getProperty(Property.OUTPUT_USFS_FILE.getPropertyKey(), "usfs.csv");
 		} catch (FileNotFoundException e) {
 			logger.log(Level.SEVERE, "Properties file not found at: " + propertiesFile, e);
 		} catch (IOException e) {

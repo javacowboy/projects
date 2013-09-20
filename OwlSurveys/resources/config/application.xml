@@ -2,6 +2,6 @@
 <!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
 <properties>
 <comment>Favorite Things</comment>
-<entry key="output.directory">/Users/matthewyoung/projects/javacowboy/OwlSurveys/output</entry>
-<entry key="input.directory">/Users/matthewyoung/projects/javacowboy/OwlSurveys/input</entry>
+<entry key="output.directory">/home/matthew/projects/git/OwlSurveys/OwlSurveys/output</entry>
+<entry key="input.directory">/home/matthew/projects/git/OwlSurveys/OwlSurveys/input</entry>
 </properties>
