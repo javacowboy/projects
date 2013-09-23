@@ -1,6 +1,7 @@
 package com.javacowboy.owl.survey.data;
 
 import java.io.File;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.javacowboy.owl.survey.data.model.OwlData;
@@ -46,12 +47,16 @@ public class Processor {
 	}
 
 	void handleFile(File file, File dataFile, File usfsFile) {
-		fileCounter++;
-		parser.parse(file, fileCounter);
-		OwlData owlData = parser.getOwlData();
-		USFSData usfsData = parser.getUsfsData();
-		writer.appendToFile(dataFile, owlData.toString(), true);
-		writer.appendToFile(usfsFile, usfsData.toString(), true);
+		try {
+			fileCounter++;
+			parser.parse(file, fileCounter);
+			OwlData owlData = parser.getOwlData();
+			USFSData usfsData = parser.getUsfsData();
+			writer.appendToFile(dataFile, owlData.toString(), true);
+			writer.appendToFile(usfsFile, usfsData.toString(), true);
+		}catch (Exception e) {
+			logger.log(Level.SEVERE, "Error handling Word document. ", e);
+		}
 	}
 
 	void delete(File file) {
