@@ -35,6 +35,11 @@ public class Constants {
 		}
 		
 		public void setPropertyValue(String propertyValue) {
+			if(OUTPUT_DATA_FILE == this || OUTPUT_USFS_FILE == this) {
+				if(propertyValue != null && !propertyValue.isEmpty() && !propertyValue.endsWith(".csv")) {
+					propertyValue += ".csv";
+				}
+			}
 			this.propertyValue = propertyValue;
 			Constants.writeProperties();
 		}
