@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.List;
 import java.util.logging.Logger;
 
 import org.apache.poi.hwpf.HWPFDocument;
@@ -18,6 +19,8 @@ import org.apache.poi.hwpf.usermodel.TableRow;
 
 import com.javacowboy.owl.survey.data.model.OwlData;
 import com.javacowboy.owl.survey.data.model.USFSData;
+import com.javacowboy.owl.survey.data.parser.NightMapping.BodyField;
+import com.javacowboy.owl.survey.data.parser.NightMapping.HeaderField;
 
 public class Parser {
 	
@@ -48,11 +51,14 @@ public class Parser {
 //				System.out.println("Paragraph " + j);
 				Paragraph para = section.getParagraph(j);
 				String line = getAsLine(para, j);
+				handleHeaderLine(line, i, j);
+				System.out.println();
 			}
 		}
 	}
 
 	private void parseBody(HWPFDocument wordDoc) {
+		System.out.println("Parsing body");
 		Range range = wordDoc.getRange();
 		for(int i=0; i<range.numSections(); i++) {
 			System.out.println("Section " + i);
@@ -60,6 +66,8 @@ public class Parser {
 			for(int j=0; j<section.numParagraphs(); j++) {
 				Paragraph para = section.getParagraph(j);
 				String line = getAsLine(para, j);
+				handleBodyLine(line, i, j);
+				System.out.println();
 			}
 		}
 	}
@@ -82,7 +90,7 @@ public class Parser {
 			}
 		}
 		System.out.println("Run from paragraph " + paraIndex);
-		System.out.println(line.toString());
+		System.out.println(line.toString().trim().isEmpty() ? "[EMPTY]" : line.toString().trim());
 		return line.toString();
 	}
 
@@ -102,6 +110,21 @@ public class Parser {
         }  
 	}
 
+	private void handleHeaderLine(String line, int sectionNumber, int paragraphNumber) {
+		List<HeaderField> expectedFields = NightMapping.getHeaderFieldsInLine(sectionNumber, paragraphNumber);
+		if(!expectedFields.isEmpty()) {
+			System.out.println("Searching for: " + expectedFields);
+		}
+	}
+	
+	private void handleBodyLine(String line, int sectionNumber, int paragraphNumber) {
+		List<BodyField> expectedFields = NightMapping.getBodyFieldsInLine(sectionNumber, paragraphNumber);
+		if(!expectedFields.isEmpty()) {
+			System.out.println("Searching for: " + expectedFields);
+		}
+	}
+	
+	//getters
 	public OwlData getOwlData() {
 		return owlData;
 	}
