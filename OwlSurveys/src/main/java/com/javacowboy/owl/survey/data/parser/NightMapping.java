@@ -3,10 +3,10 @@ package com.javacowboy.owl.survey.data.parser;
 import java.util.ArrayList;
 import java.util.List;
 
-public class NightMapping {
+public class NightMapping { 
 	
-	public static List<HeaderField> getHeaderFieldsInLine(int sectionNumber, int paraNumber) {
-		List<HeaderField> list = new ArrayList<NightMapping.HeaderField>();
+	public static List<DocumentField> getHeaderFieldsInLine(int sectionNumber, int paraNumber) {
+		List<DocumentField> list = new ArrayList<DocumentField>();
 		for(HeaderField e : HeaderField.values()) {
 			if(e.getSectionNumber() == sectionNumber) {
 				for(int paraNum : e.getParagraphNumbers()) {
@@ -20,8 +20,8 @@ public class NightMapping {
 		return list;
 	}
 
-	public static List<BodyField> getBodyFieldsInLine(int sectionNumber, int paraNumber) {
-		List<BodyField> list = new ArrayList<NightMapping.BodyField>();
+	public static List<DocumentField> getBodyFieldsInLine(int sectionNumber, int paraNumber) {
+		List<DocumentField> list = new ArrayList<DocumentField>();
 		for(BodyField e : BodyField.values()) {
 			if(e.getSectionNumber() == sectionNumber) {
 				for(int paraNum : e.getParagraphNumbers()) {
@@ -35,7 +35,7 @@ public class NightMapping {
 		return list;
 	}
 	
-	public enum HeaderField {
+	public enum HeaderField implements DocumentField {
 		DATE("Date:", 0, 11),
 		DISTRICT("District:", 0, 10),
 		FOREST("Forest:", 0, 10),
@@ -63,13 +63,23 @@ public class NightMapping {
 			return paragraphNumbers;
 		}
 
+		@Override
 		public String getLabelInDocument() {
 			return labelInDocument;
 		}
 		
+		public static HeaderField get(String labelInDocument) {
+			for(HeaderField e : values()) {
+				if(e.getLabelInDocument().equals(labelInDocument)) {
+					return e;
+				}
+			}
+			return null;
+		}
+		
 	}
 	
-	public enum BodyField {
+	public enum BodyField implements DocumentField {
 		ABORTED("Survey Aborted?", 0, 2),
 		COMPLETED("Survey Completed?", 0, 2),
 		MONITOR_TYPE("Monitoring Type:", 0, 0),
@@ -132,8 +142,18 @@ public class NightMapping {
 			return paragraphNumbers;
 		}
 
+		@Override
 		public String getLabelInDocument() {
 			return labelInDocument;
+		}
+		
+		public static BodyField get(String labelInDocument) {
+			for(BodyField e : values()) {
+				if(e.getLabelInDocument().equals(labelInDocument)) {
+					return e;
+				}
+			}
+			return null;
 		}
 	}
 }

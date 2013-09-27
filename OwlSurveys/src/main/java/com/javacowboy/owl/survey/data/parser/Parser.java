@@ -19,8 +19,6 @@ import org.apache.poi.hwpf.usermodel.TableRow;
 
 import com.javacowboy.owl.survey.data.model.OwlData;
 import com.javacowboy.owl.survey.data.model.USFSData;
-import com.javacowboy.owl.survey.data.parser.NightMapping.BodyField;
-import com.javacowboy.owl.survey.data.parser.NightMapping.HeaderField;
 
 public class Parser {
 	
@@ -28,11 +26,13 @@ public class Parser {
 	
 	private OwlData owlData;
 	private USFSData usfsData;
+	private Mapper mapper;
 	
 	public void parse(File file, long recordNumber) throws FileNotFoundException, IOException {
 		logger.info("Parsing file: " + file.getName());
 		owlData = new OwlData(file, recordNumber);
 		usfsData = new USFSData();
+		mapper = new Mapper();
 		HWPFDocument wordDoc = new HWPFDocument(new FileInputStream(file));
 		parseHeader(wordDoc, 1);//parse the header on page 1
 		parseBody(wordDoc);
@@ -52,7 +52,6 @@ public class Parser {
 				Paragraph para = section.getParagraph(j);
 				String line = getAsLine(para, j);
 				handleHeaderLine(line, i, j);
-				System.out.println();
 			}
 		}
 	}
@@ -67,7 +66,6 @@ public class Parser {
 				Paragraph para = section.getParagraph(j);
 				String line = getAsLine(para, j);
 				handleBodyLine(line, i, j);
-				System.out.println();
 			}
 		}
 	}
@@ -111,19 +109,51 @@ public class Parser {
 	}
 
 	private void handleHeaderLine(String line, int sectionNumber, int paragraphNumber) {
-		List<HeaderField> expectedFields = NightMapping.getHeaderFieldsInLine(sectionNumber, paragraphNumber);
+		List<DocumentField> expectedFields = NightMapping.getHeaderFieldsInLine(sectionNumber, paragraphNumber);
 		if(!expectedFields.isEmpty()) {
 			System.out.println("Searching for: " + expectedFields);
+			parseLineForFields(expectedFields, line);
 		}
 	}
 	
 	private void handleBodyLine(String line, int sectionNumber, int paragraphNumber) {
-		List<BodyField> expectedFields = NightMapping.getBodyFieldsInLine(sectionNumber, paragraphNumber);
+		List<DocumentField> expectedFields = NightMapping.getBodyFieldsInLine(sectionNumber, paragraphNumber);
 		if(!expectedFields.isEmpty()) {
 			System.out.println("Searching for: " + expectedFields);
+			parseLineForFields(expectedFields, line);
 		}
 	}
 	
+	private void parseLineForFields(List<DocumentField> expectedFields, String line) {
+		for(DocumentField field : expectedFields) {
+			String fieldValue = parseForValue(field, expectedFields, line);
+			if(fieldValue != null) {
+				mapper.map(field, fieldValue, owlData, usfsData);
+			}
+		}
+		System.out.println();
+	}
+
+	private String parseForValue(DocumentField field, List<DocumentField> otherFieldsInLine, String line) {
+		// Night Survey #:  2	Outing #:  1	Survey Aborted?  N	Survey Completed?  Y   	% Survey Area Covered:  100
+		//say we're searching for Survey Aborted?
+		String label = field.getLabelInDocument();
+		if(line != null && line.contains(label)) {
+			line = line.substring(line.indexOf(label) + label.length());
+			//now we have "  N	Survey Completed?  Y   	% Survey Area Covered:  100"
+			for(DocumentField otherField : otherFieldsInLine) {
+				//chop off everything so we're left with " N "
+				String otherLabel = otherField.getLabelInDocument();
+				if(line.contains(otherLabel)) {
+					line = line.substring(0, line.indexOf(otherLabel));
+				}
+			}
+			System.out.println("Found: " + line.trim());
+			return line.trim();
+		}
+		return null;
+	}
+
 	//getters
 	public OwlData getOwlData() {
 		return owlData;

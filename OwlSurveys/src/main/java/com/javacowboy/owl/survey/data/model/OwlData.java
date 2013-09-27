@@ -8,27 +8,29 @@ public class OwlData {
 
 	// an enum to keep track of the order to export the data
 	public enum COLUMN {
-		FILENAME("Orig File"), RECORD("Record"), AREA("Study Area"), FOREST(
-				"NF Name"), DISTRICT("RD Name"), PAC_NAME("PAC Name"), PAC_NUMBER(
-				"PAC Full No."), RANGE("Mountain Range"), QUADRANT("Quad Name"), MONITOR_TYPE(
-				"Monitoring Type"), SUNRISE("Sunrise"), SUNSET("Sunset"), MONTH(
-				"Month"), DAY("Day"), YEAR("Year"), OBJECTIVE("Prog. Objc"), SURVEY_TYPE(
-				"Survey Type"), SURVEY_NUMBER("Survey No."), SURVEY_OUT(
-				"Survey Out."), PREDAWN("Pre-dawn?"), ABORT("Abort?"), COMPL(
-				"Compl?"), SURVEY_PERCENT("% Surv."), OBSERVER_ONE("Observer 1"), OBSERVER_TWO(
-				"Observer 2"), OBSERVER_THREE("Observer 3"), RESULTS(
-				"Visit Results"), START_TIME("Survey Start Time"), END_TIME(
-				"Survey End Time"), HOURS("Survey Hours"), HIKE_HOURS(
-				"Hiking Hours"), CPRT("CP or RT"), ROUTE_ID("CP or RT ID"), METHOD(
-				"Surv. Meth."), CALL_METHOD("Call Meth."), ROUTE_START_TIME(
-				"Route Start"), ROUTE_END_TIME("Route End"), ROUTE_TOTAL(
-				"Route Total"), MOON("Moon?"), WIND_MIN("Wind min"), WIND_MAX(
-				"Wind max"), CC_PERCENT("CC%"), PPT("PPT?"), TEMP_MIN(
-				"Temp min"), TEMP_MAX("Temp max"), OBS_TYPE("Obs. Type"), SEX(
-				"Sex"), AGE("Age"), SPP("Spp"), RESPONSE_TIME("Resp. Time"), BEARING(
-				"Bearing degrees"), DISTANCE("Distance"), UTM_EAST("UTM E"), UTM_NORTH(
-				"UTM N"), MICE_COUNT("Mice Used"), NESTING_STATUS(
-				"Nesting Status");
+		FILENAME("Orig File"), RECORD("Record"), AREA("Study Area"), 
+		FOREST("NF Name"), DISTRICT("RD Name"), PAC_NAME("PAC Name"), 
+		PAC_NUMBER("PAC Full No."), RANGE("Mountain Range"), 
+		QUADRANT("Quad Name"), MONITOR_TYPE("Monitoring Type"), 
+		SUNRISE("Sunrise"), SUNSET("Sunset"), MONTH("Month"), 
+		DAY("Day"), YEAR("Year"), OBJECTIVE("Prog. Objc"), 
+		SURVEY_TYPE("Survey Type"), SURVEY_NUMBER("Survey No."), 
+		SURVEY_OUT("Survey Out."), PREDAWN("Pre-dawn?"), ABORT("Abort?"), 
+		COMPL("Compl?"), SURVEY_PERCENT("% Surv."), OBSERVER_ONE("Observer 1"), 
+		OBSERVER_TWO("Observer 2"), OBSERVER_THREE("Observer 3"), 
+		RESULTS("Visit Results"), START_TIME("Survey Start Time"), 
+		END_TIME("Survey End Time"), HOURS("Survey Hours"), 
+		HIKE_HOURS("Hiking Hours"), CPRT("CP or RT"), 
+		ROUTE_ID("CP or RT ID"), METHOD("Surv. Meth."), 
+		CALL_METHOD("Call Meth."), ROUTE_START_TIME("Route Start"), 
+		ROUTE_END_TIME("Route End"), ROUTE_TOTAL("Route Total"), 
+		MOON("Moon?"), WIND_MIN("Wind min"), WIND_MAX("Wind max"), 
+		CC_PERCENT("CC%"), PPT("PPT?"), TEMP_MIN("Temp min"), 
+		TEMP_MAX("Temp max"), OBS_TYPE("Obs. Type"), SEX("Sex"), 
+		AGE("Age"), SPP("Spp"), RESPONSE_TIME("Resp. Time"), 
+		BEARING("Bearing degrees"), DISTANCE("Distance"), UTM_EAST("UTM E"), 
+		UTM_NORTH("UTM N"), MICE_COUNT("Mice Used"), 
+		NESTING_STATUS("Nesting Status");
 
 		String label;
 
@@ -439,4 +441,286 @@ public class OwlData {
 			this.sunsetTime = value;
 		}
 	}
+	
+	//getters and setters
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public String getMonth() {
+		return month;
+	}
+
+	public void setMonth(String month) {
+		this.month = month;
+	}
+
+	public String getDay() {
+		return day;
+	}
+
+	public void setDay(String day) {
+		this.day = day;
+	}
+
+	public String getYear() {
+		return year;
+	}
+
+	public void setYear(String year) {
+		this.year = year;
+	}
+
+	public SurveyType getSurveyType() {
+		return surveyType;
+	}
+
+	public void setSurveyType(SurveyType surveyType) {
+		this.surveyType = surveyType;
+	}
+
+	public String getDistrict() {
+		return district;
+	}
+
+	public void setDistrict(String district) {
+		this.district = district;
+	}
+
+	public File getFile() {
+		return file;
+	}
+
+	public void setFile(File file) {
+		this.file = file;
+	}
+
+	public String getForest() {
+		return forest;
+	}
+
+	public void setForest(String forest) {
+		this.forest = forest;
+	}
+
+	public String getObserver1() {
+		return observer1;
+	}
+
+	public void setObserver1(String observer1) {
+		this.observer1 = observer1;
+	}
+
+	public String getObserver2() {
+		return observer2;
+	}
+
+	public void setObserver2(String observer2) {
+		this.observer2 = observer2;
+	}
+
+	public String getObserver3() {
+		return observer3;
+	}
+
+	public void setObserver3(String observer3) {
+		this.observer3 = observer3;
+	}
+
+	public String getRange() {
+		return range;
+	}
+
+	public void setRange(String range) {
+		this.range = range;
+	}
+
+	public String getPacName() {
+		return pacName;
+	}
+
+	public void setPacName(String pacName) {
+		this.pacName = pacName;
+	}
+
+	public String getPacNumber() {
+		return pacNumber;
+	}
+
+	public void setPacNumber(String pacNumber) {
+		this.pacNumber = pacNumber;
+	}
+
+	public String getAreaCovered() {
+		return areaCovered;
+	}
+
+	public void setAreaCovered(String areaCovered) {
+		this.areaCovered = areaCovered;
+	}
+
+	public String getMonitorType() {
+		return monitorType;
+	}
+
+	public void setMonitorType(String monitorType) {
+		this.monitorType = monitorType;
+	}
+
+	public String getSurveyNumber() {
+		return surveyNumber;
+	}
+
+	public void setSurveyNumber(String surveyNumber) {
+		this.surveyNumber = surveyNumber;
+	}
+
+	public String getOutingNumber() {
+		return outingNumber;
+	}
+
+	public void setOutingNumber(String outingNumber) {
+		this.outingNumber = outingNumber;
+	}
+
+	public String getSurveyStartTime() {
+		return surveyStartTime;
+	}
+
+	public void setSurveyStartTime(String surveyStartTime) {
+		this.surveyStartTime = surveyStartTime;
+	}
+
+	public String getSurveyEndTime() {
+		return surveyEndTime;
+	}
+
+	public void setSurveyEndTime(String surveyEndTime) {
+		this.surveyEndTime = surveyEndTime;
+	}
+
+	public String getSurveyTotalTime() {
+		return surveyTotalTime;
+	}
+
+	public void setSurveyTotalTime(String surveyTotalTime) {
+		this.surveyTotalTime = surveyTotalTime;
+	}
+
+	public String getHikeInStartTime() {
+		return hikeInStartTime;
+	}
+
+	public void setHikeInStartTime(String hikeInStartTime) {
+		this.hikeInStartTime = hikeInStartTime;
+	}
+
+	public String getHikeInEndTime() {
+		return hikeInEndTime;
+	}
+
+	public void setHikeInEndTime(String hikeInEndTime) {
+		this.hikeInEndTime = hikeInEndTime;
+	}
+
+	public String getHikeInTotalTime() {
+		return hikeInTotalTime;
+	}
+
+	public void setHikeInTotalTime(String hikeInTotalTime) {
+		this.hikeInTotalTime = hikeInTotalTime;
+	}
+
+	public String getHikeOutStartTime() {
+		return hikeOutStartTime;
+	}
+
+	public void setHikeOutStartTime(String hikeOutStartTime) {
+		this.hikeOutStartTime = hikeOutStartTime;
+	}
+
+	public String getHikeOutEndTime() {
+		return hikeOutEndTime;
+	}
+
+	public void setHikeOutEndTime(String hikeOutEndTime) {
+		this.hikeOutEndTime = hikeOutEndTime;
+	}
+
+	public String getHikeOutTotalTime() {
+		return hikeOutTotalTime;
+	}
+
+	public void setHikeOutTotalTime(String hikeOutTotalTime) {
+		this.hikeOutTotalTime = hikeOutTotalTime;
+	}
+
+	public String getMiceUsed() {
+		return miceUsed;
+	}
+
+	public void setMiceUsed(String miceUsed) {
+		this.miceUsed = miceUsed;
+	}
+
+	public String getNestingStatus() {
+		return nestingStatus;
+	}
+
+	public void setNestingStatus(String nestingStatus) {
+		this.nestingStatus = nestingStatus;
+	}
+
+	public String getPredawn() {
+		return predawn;
+	}
+
+	public void setPredawn(String predawn) {
+		this.predawn = predawn;
+	}
+
+	public String getAborted() {
+		return aborted;
+	}
+
+	public void setAborted(String aborted) {
+		this.aborted = aborted;
+	}
+
+	public String getCompleted() {
+		return completed;
+	}
+
+	public void setCompleted(String completed) {
+		this.completed = completed;
+	}
+
+	public List<DetailData> getDetails() {
+		return details;
+	}
+
+	public void setDetails(List<DetailData> details) {
+		this.details = details;
+	}
+
+	public String getResult() {
+		return result;
+	}
+
+	public String getQuadMapName() {
+		return quadMapName;
+	}
+
+	public String getSunriseTime() {
+		return sunriseTime;
+	}
+
+	public String getSunsetTime() {
+		return sunsetTime;
+	}
+	
 }
