@@ -88,4 +88,38 @@ public class USFSData {
 		}
 		return "'" + text;
 	}
+
+	//getters and setters
+	public SurveyType getSurveyType() {
+		return surveyType;
+	}
+
+	public void setSurveyType(SurveyType surveyType) {
+		this.surveyType = surveyType;
+	}
+
+	public String getPacName() {
+		return pacName;
+	}
+
+	public void setPacName(String pacName) {
+		this.pacName = pacName;
+	}
+
+	public String getPacNumber() {
+		return pacNumber;
+	}
+
+	public void setPacNumber(String pacNumber) {
+		this.pacNumber = pacNumber;
+	}
+
+	public List<USFSCallPoint> getCallPoints() {
+		return callPoints;
+	}
+
+	public void setCallPoints(List<USFSCallPoint> callPoints) {
+		this.callPoints = callPoints;
+	}
+	
 }

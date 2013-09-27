@@ -36,7 +36,7 @@ public class NightMapping {
 	}
 	
 	public enum HeaderField implements DocumentField {
-		DATE("Date:", 0, 11),
+		DATE("Date:", 0, 10,11),//date shows in 10 or 11.  The way the parsing works, putting both values works
 		DISTRICT("District:", 0, 10),
 		FOREST("Forest:", 0, 10),
 		MOUNTAIN_RANGE("Mountain Range:", 0, 11),

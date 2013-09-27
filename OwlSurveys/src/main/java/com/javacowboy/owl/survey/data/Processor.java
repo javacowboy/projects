@@ -33,7 +33,7 @@ public class Processor {
 		writer.appendToFile(usfsFile, USFSData.getHeader(), false);
 		logger.info("Searching directory: " + inputDir.getPath());
 		handlePath(inputDir, dataFile, usfsFile);
-
+		logger.info("Processing Complete!");
 	}
 
 	void handlePath(File path, File dataFile, File usfsFile) {
