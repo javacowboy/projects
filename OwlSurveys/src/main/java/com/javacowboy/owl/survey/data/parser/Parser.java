@@ -18,6 +18,7 @@ import org.apache.poi.hwpf.usermodel.TableCell;
 import org.apache.poi.hwpf.usermodel.TableRow;
 
 import com.javacowboy.owl.survey.data.model.OwlData;
+import com.javacowboy.owl.survey.data.model.SurveyType;
 import com.javacowboy.owl.survey.data.model.USFSData;
 
 public class Parser {
@@ -34,11 +35,35 @@ public class Parser {
 		usfsData = new USFSData();
 		mapper = new Mapper();
 		HWPFDocument wordDoc = new HWPFDocument(new FileInputStream(file));
-		parseHeader(wordDoc, 1);//parse the header on page 1
-		parseBody(wordDoc);
+		SurveyType surveyType = determineSurveyType(wordDoc);
+		owlData.setSurveyType(surveyType);
+		usfsData.setSurveyType(surveyType);
+		parseHeader(surveyType, wordDoc, 1);//parse the header on page 1
+		parseBody(surveyType, wordDoc);
 	}
 	
-	private void parseHeader(HWPFDocument wordDoc, int pageNumber) {
+	private SurveyType determineSurveyType(HWPFDocument wordDoc) {
+		//Parse the header.  Day has Pac Name: and Pac Number:.  Night has Pac Name and Number:
+		HeaderStories headerStories = new HeaderStories(wordDoc);
+		Range range = headerStories.getRange();
+		for(int i=0; i<range.numSections(); i++) {
+			Section section = range.getSection(i);
+			for(int j=0; j<section.numParagraphs(); j++) {
+				Paragraph para = section.getParagraph(j);
+				String line = getAsLine(para, j);
+				if(line.contains(NightMapping.HeaderField.PAC_NAME_NUMBER.getLabelInDocument())) {
+					System.out.println("Survey Type: " + SurveyType.NIGHT.toString());
+					return SurveyType.NIGHT;
+				}else if(line.contains(DayMapping.HeaderField.PAC_NAME.getLabelInDocument())) {
+					System.out.println("Survey Type: " + SurveyType.DAY.toString());
+					return SurveyType.DAY;
+				}
+			}
+		}
+		throw new UnsupportedOperationException("Could not determine Night or Day Survey");
+	}
+
+	private void parseHeader(SurveyType surveyType, HWPFDocument wordDoc, int pageNumber) {
 		System.out.println("Parsing header from page " + pageNumber);
 		HeaderStories headerStore = new HeaderStories(wordDoc);
 //        String header = headerStore.getHeader(pageNumber);
@@ -51,12 +76,12 @@ public class Parser {
 //				System.out.println("Paragraph " + j);
 				Paragraph para = section.getParagraph(j);
 				String line = getAsLine(para, j);
-				handleHeaderLine(line, i, j);
+				handleHeaderLine(surveyType, line, i, j);
 			}
 		}
 	}
 
-	private void parseBody(HWPFDocument wordDoc) {
+	private void parseBody(SurveyType surveyType, HWPFDocument wordDoc) {
 		System.out.println("Parsing body");
 		Range range = wordDoc.getRange();
 		for(int i=0; i<range.numSections(); i++) {
@@ -65,7 +90,7 @@ public class Parser {
 			for(int j=0; j<section.numParagraphs(); j++) {
 				Paragraph para = section.getParagraph(j);
 				String line = getAsLine(para, j);
-				handleBodyLine(line, i, j);
+				handleBodyLine(surveyType, line, i, j);
 			}
 		}
 	}
@@ -108,16 +133,16 @@ public class Parser {
         }  
 	}
 
-	private void handleHeaderLine(String line, int sectionNumber, int paragraphNumber) {
-		List<DocumentField> expectedFields = NightMapping.getHeaderFieldsInLine(sectionNumber, paragraphNumber);
+	private void handleHeaderLine(SurveyType surveyType, String line, int sectionNumber, int paragraphNumber) {
+		List<DocumentField> expectedFields = surveyType == SurveyType.NIGHT ? NightMapping.getHeaderFieldsInLine(sectionNumber, paragraphNumber) : DayMapping.getHeaderFieldsInLine(sectionNumber, paragraphNumber);
 		if(!expectedFields.isEmpty()) {
 			System.out.println("Searching for: " + expectedFields);
 			parseLineForFields(expectedFields, line);
 		}
 	}
 	
-	private void handleBodyLine(String line, int sectionNumber, int paragraphNumber) {
-		List<DocumentField> expectedFields = NightMapping.getBodyFieldsInLine(sectionNumber, paragraphNumber);
+	private void handleBodyLine(SurveyType surveyType, String line, int sectionNumber, int paragraphNumber) {
+		List<DocumentField> expectedFields = surveyType == SurveyType.NIGHT ? NightMapping.getBodyFieldsInLine(sectionNumber, paragraphNumber) : DayMapping.getBodyFieldsInLine(sectionNumber, paragraphNumber);
 		if(!expectedFields.isEmpty()) {
 			System.out.println("Searching for: " + expectedFields);
 			parseLineForFields(expectedFields, line);

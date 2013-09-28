@@ -1,25 +1,45 @@
 package com.javacowboy.owl.survey.data.parser;
 
 import com.javacowboy.owl.survey.data.model.OwlData;
+import com.javacowboy.owl.survey.data.model.SurveyType;
 import com.javacowboy.owl.survey.data.model.USFSData;
-import com.javacowboy.owl.survey.data.parser.NightMapping.BodyField;
-import com.javacowboy.owl.survey.data.parser.NightMapping.HeaderField;
 
 public class Mapper {
 	
 	Converter converter = new Converter();
 	
 	public void map(DocumentField documentField, String fieldValue, OwlData owlData, USFSData usfsData) {
-		HeaderField nightHeader = HeaderField.get(documentField.getLabelInDocument());
-		BodyField bodyField = BodyField.get(documentField.getLabelInDocument());
-		if(nightHeader != null) {
-			mapNightHeaderValue(nightHeader, fieldValue, owlData, usfsData);
-		}else if(bodyField != null) {
-			mapNightBodyValue(bodyField, fieldValue, owlData, usfsData);
+		SurveyType surveyType = owlData.getSurveyType();
+		if(SurveyType.NIGHT.equals(surveyType)) {
+			NightMapping.HeaderField headerField = NightMapping.HeaderField.get(documentField.getLabelInDocument());
+			NightMapping.BodyField bodyField = NightMapping.BodyField.get(documentField.getLabelInDocument());
+			if(headerField != null) {
+				mapNightHeaderValue(headerField, fieldValue, owlData, usfsData);
+			}else if(bodyField != null) {
+				mapNightBodyValue(bodyField, fieldValue, owlData, usfsData);
+			}
+		}else if(SurveyType.DAY.equals(surveyType)) {
+			DayMapping.HeaderField headerField = DayMapping.HeaderField.get(documentField.getLabelInDocument());
+			DayMapping.BodyField bodyField = DayMapping.BodyField.get(documentField.getLabelInDocument());
+			if(headerField != null) {
+				mapDayHeaderValue(headerField, fieldValue, owlData, usfsData);
+			}else if(bodyField != null) {
+				mapDayBodyValue(bodyField, fieldValue, owlData, usfsData);
+			}
 		}
 	}
 
-	private void mapNightHeaderValue(HeaderField headerField, String fieldValue, OwlData owlData, USFSData usfsData) {
+	private void mapDayHeaderValue(DayMapping.HeaderField headerField, String fieldValue, OwlData owlData, USFSData usfsData) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void mapDayBodyValue(DayMapping.BodyField bodyField, String fieldValue, OwlData owlData, USFSData usfsData) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private void mapNightHeaderValue(NightMapping.HeaderField headerField, String fieldValue, OwlData owlData, USFSData usfsData) {
 		switch (headerField) {
 		case DATE:
 			converter.convertDate(fieldValue, owlData);
@@ -50,7 +70,7 @@ public class Mapper {
 		}
 	}
 
-	private void mapNightBodyValue(BodyField bodyField, String fieldValue, OwlData owlData, USFSData usfsData) {
+	private void mapNightBodyValue(NightMapping.BodyField bodyField, String fieldValue, OwlData owlData, USFSData usfsData) {
 		switch (bodyField) {
 		case ABORTED:
 			owlData.setAborted(fieldValue);
