@@ -29,6 +29,10 @@ public class Parser {
 	private USFSData usfsData;
 	private Mapper mapper;
 	
+	private static final int maxOffsetIncrements = 20;
+	private int offsetLineNumber = 0; //sometimes there's a couple extra lines in files
+	private int offsetAlteredCount = 0; //used to stop infinite loops
+	
 	public void parse(File file, long recordNumber) throws FileNotFoundException, IOException {
 		logger.info("Parsing file: " + file.getName());
 		owlData = new OwlData(file, recordNumber);
@@ -48,16 +52,20 @@ public class Parser {
 		Range range = headerStories.getRange();
 		for(int i=0; i<range.numSections(); i++) {
 			Section section = range.getSection(i);
+			resetOffset(0);
 			for(int j=0; j<section.numParagraphs(); j++) {
 				Paragraph para = section.getParagraph(j);
 				String line = getAsLine(para, j);
 				if(line.contains(NightMapping.HeaderField.PAC_NAME_NUMBER.getLabelInDocument())) {
-					System.out.println("Survey Type: " + SurveyType.NIGHT.toString());
+					System.out.println("Survey Type: " + SurveyType.NIGHT.toString()); 
+					System.out.println();
 					return SurveyType.NIGHT;
 				}else if(line.contains(DayMapping.HeaderField.PAC_NAME.getLabelInDocument())) {
-					System.out.println("Survey Type: " + SurveyType.DAY.toString());
+					System.out.println("Survey Type: " + SurveyType.DAY.toString()); 
+					System.out.println();
 					return SurveyType.DAY;
 				}
+				offsetLineNumber++;//increment offset with paragraph number
 			}
 		}
 		throw new UnsupportedOperationException("Could not determine Night or Day Survey");
@@ -72,11 +80,13 @@ public class Parser {
 		for(int i=0; i<range.numSections(); i++) {
 			System.out.println("Section " + i);
 			Section section = range.getSection(i);
+			resetOffset(0);
 			for(int j=0; j<section.numParagraphs(); j++) {
 //				System.out.println("Paragraph " + j);
 				Paragraph para = section.getParagraph(j);
 				String line = getAsLine(para, j);
 				handleHeaderLine(surveyType, line, i, j);
+				offsetLineNumber++;//increment offset with paragraph number
 			}
 		}
 	}
@@ -87,10 +97,12 @@ public class Parser {
 		for(int i=0; i<range.numSections(); i++) {
 			System.out.println("Section " + i);
 			Section section = range.getSection(i);
+			resetOffset(0);
 			for(int j=0; j<section.numParagraphs(); j++) {
 				Paragraph para = section.getParagraph(j);
 				String line = getAsLine(para, j);
 				handleBodyLine(surveyType, line, i, j);
+				offsetLineNumber++;//increment offset with paragraph number
 			}
 		}
 	}
@@ -105,14 +117,14 @@ public class Parser {
 			//ignoring the last run sometimes misses text, but so far only in column headers
 			if(para.isInTable() && i == para.numCharacterRuns() - 1) {
 				CharacterRun run = para.getCharacterRun(i);
-				System.out.println("Paragraph " + paraIndex + " is in a table, skipping: " + run.text());
+				System.out.println("Paragraph " + paraIndex + " (offset: " + offsetLineNumber + ") is in a table, skipping: " + run.text());
 			}else {
 				CharacterRun run = para.getCharacterRun(i);
 				String text = run.text();
 				line.append(text);
 			}
 		}
-		System.out.println("Run from paragraph " + paraIndex);
+		System.out.println("Run from paragraph " + paraIndex + " (offset: " + offsetLineNumber + ")");
 		System.out.println(line.toString().trim().isEmpty() ? "[EMPTY]" : line.toString().trim());
 		return line.toString();
 	}
@@ -134,29 +146,53 @@ public class Parser {
 	}
 
 	private void handleHeaderLine(SurveyType surveyType, String line, int sectionNumber, int paragraphNumber) {
-		List<DocumentField> expectedFields = surveyType == SurveyType.NIGHT ? NightMapping.getHeaderFieldsInLine(sectionNumber, paragraphNumber) : DayMapping.getHeaderFieldsInLine(sectionNumber, paragraphNumber);
+		List<DocumentField> expectedFields = surveyType == SurveyType.NIGHT ? NightMapping.getHeaderFieldsInLine(sectionNumber, offsetLineNumber) : DayMapping.getHeaderFieldsInLine(sectionNumber, offsetLineNumber);
 		if(!expectedFields.isEmpty()) {
 			System.out.println("Searching for: " + expectedFields);
-			parseLineForFields(expectedFields, line);
+			parseLineForFields(expectedFields, line, paragraphNumber);
 		}
 	}
 	
 	private void handleBodyLine(SurveyType surveyType, String line, int sectionNumber, int paragraphNumber) {
-		List<DocumentField> expectedFields = surveyType == SurveyType.NIGHT ? NightMapping.getBodyFieldsInLine(sectionNumber, paragraphNumber) : DayMapping.getBodyFieldsInLine(sectionNumber, paragraphNumber);
+		List<DocumentField> expectedFields = surveyType == SurveyType.NIGHT ? NightMapping.getBodyFieldsInLine(sectionNumber, offsetLineNumber) : DayMapping.getBodyFieldsInLine(sectionNumber, offsetLineNumber);
 		if(!expectedFields.isEmpty()) {
 			System.out.println("Searching for: " + expectedFields);
-			parseLineForFields(expectedFields, line);
+			parseLineForFields(expectedFields, line, paragraphNumber);
 		}
 	}
 	
-	private void parseLineForFields(List<DocumentField> expectedFields, String line) {
+	private void parseLineForFields(List<DocumentField> expectedFields, String line, int paragraphNumber) {
+		boolean gotExpectedValue = false;
 		for(DocumentField field : expectedFields) {
 			String fieldValue = parseForValue(field, expectedFields, line);
 			if(fieldValue != null) {
+				gotExpectedValue = true;
+				resetOffset(paragraphNumber);
 				mapper.map(field, fieldValue, owlData, usfsData);
+			}else if(field.isInTableCell()) {
+				gotExpectedValue = true; //whether the value is empty or not, we searched the cell
+				//TODO: if end of row, add the details to the data
 			}
 		}
+		if(!expectedFields.isEmpty() && !gotExpectedValue) {
+			setOffset(paragraphNumber);
+		}
 		System.out.println();
+	}
+
+	private void setOffset(int paragraphNumber) {
+		//if we haven't already rolled the offset too many times, adjust the offset
+		if(offsetAlteredCount < maxOffsetIncrements) {
+			offsetLineNumber--;
+			offsetAlteredCount++;
+		}else {
+			resetOffset(paragraphNumber);
+		}
+	}
+
+	private void resetOffset(int paragraphNumber) {
+		offsetLineNumber = paragraphNumber;
+		offsetAlteredCount = 0;
 	}
 
 	private String parseForValue(DocumentField field, List<DocumentField> otherFieldsInLine, String line) {

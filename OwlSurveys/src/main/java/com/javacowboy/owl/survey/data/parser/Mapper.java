@@ -30,13 +30,132 @@ public class Mapper {
 	}
 
 	private void mapDayHeaderValue(DayMapping.HeaderField headerField, String fieldValue, OwlData owlData, USFSData usfsData) {
-		// TODO Auto-generated method stub
+		switch (headerField) {
+		case DATE:
+			converter.convertDate(fieldValue, owlData);
+			break;
+		case DISTRICT:
+			owlData.setDistrict(fieldValue);
+			break;
+		case FOREST:
+			owlData.setForest(fieldValue);
+			break;
+		case PAC_NAME:
+			owlData.setPacName(fieldValue);
+			break;
+		case PAC_NUMBER:
+			owlData.setPacNumber(fieldValue);
+			break;
+		case PREDAWN:
+			owlData.setPredawn(fieldValue);
+			break;
+		default:
+			throw new UnsupportedOperationException("Mapping for " + headerField + " is not supported.");
+		}
 		
 	}
 
 	private void mapDayBodyValue(DayMapping.BodyField bodyField, String fieldValue, OwlData owlData, USFSData usfsData) {
-		// TODO Auto-generated method stub
-		
+		switch (bodyField) {
+		case DATA_AGE:
+			
+			break;
+		case DATA_SEX:
+			
+			break;
+		case DATA_SPECIES:
+			
+			break;
+		case DATA_TIME:
+			
+			break;
+		case DATA_TYPE:
+			
+			break;
+		case DATA_UTME:
+			
+			break;
+		case DATA_UTMN:
+			
+			break;
+		case EVIDENCE_USED:
+			
+			break;
+		case HABITAT:
+			
+			break;
+		case MICE_COUNT:
+			
+			break;
+		case MICE_MOUSE_FEMALE:
+			
+			break;
+		case MICE_MOUSE_MALE:
+			
+			break;
+		case MICE_MOUSE_NUMBER:
+			
+			break;
+		case MICE_MOUSE_UNKNOWN:
+			
+			break;
+		case MICE_USED:
+			
+			break;
+		case MOUNTAIN_RANGE:
+			
+			break;
+		case NEST_LOCATED:
+			
+			break;
+		case OBSERVERS:
+			converter.convertObservers(fieldValue, owlData);
+			break;
+		case OTHER_RAPTORS:
+			
+			break;
+		case QUAD_MAP:
+			
+			break;
+		case RESULT:
+			
+			break;
+		case ROOST_LOCATED:
+			
+			break;
+		case SUN_TIME:
+			
+			break;
+		case VISIT:
+			
+			break;
+		case WEATHER_CLOUD_END:
+			
+			break;
+		case WEATHER_CLOUD_START:
+			
+			break;
+		case WEATHER_PRECIP_END:
+			
+			break;
+		case WEATHER_PRECIP_START:
+			
+			break;
+		case WEATHER_TEMP_END:
+			
+			break;
+		case WEATHER_TEMP_START:
+			
+			break;
+		case WEATHER_WIND_END:
+			
+			break;
+		case WEATHER_WIND_START:
+			
+			break;
+		default:
+			throw new UnsupportedOperationException("Mapping for " + bodyField + " is not supported.");
+		}
 	}
 
 	private void mapNightHeaderValue(NightMapping.HeaderField headerField, String fieldValue, OwlData owlData, USFSData usfsData) {
