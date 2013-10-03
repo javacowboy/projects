@@ -10,6 +10,9 @@ import com.javacowboy.owl.survey.data.model.USFSData;
 public class Converter {
 	
 	public void convertDate(String dateString, OwlData owlData) {
+		if(dateString == null) {
+			return;
+		}
 		if(dateString.contains(",")){
 	  		splitDate(dateString, "MMM dd, yyyy", owlData);
 	  	}else if(dateString.contains("/")){
@@ -22,17 +25,17 @@ public class Converter {
 	}
 	
 	public void convertObservers(String value, OwlData owlData) {
-		if(value.contains(",")){
+		if(value != null && value.contains(",")){
 	  		String[] observers = value.split(",");
 	  		for(int i=0; i<observers.length && i<3; i++){
 	  			if(i == 0){
-	  				owlData.setObserver1(observers[0]);
+	  				owlData.setObserver1(observers[0].trim());
 	  			}
 	  			if(i == 1){
-	  				owlData.setObserver2(observers[1]);
+	  				owlData.setObserver2(observers[1].trim());
 	  			}
 	  			if(i == 2){
-	  				owlData.setObserver3(observers[2]);
+	  				owlData.setObserver3(observers[2].trim());
 	  			}
 	  		}
 	  	}else{
