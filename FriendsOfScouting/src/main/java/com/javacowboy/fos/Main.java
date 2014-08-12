@@ -2,10 +2,12 @@ package com.javacowboy.fos;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.util.Scanner;
 
 public class Main {
 	
 	static final String FOS_IMPORT_FILE = "./BSA Friends of Scouting Import.csv";
+	protected Scanner scanner;
 	
 	public static void main(String[] args) {
 		Main instance = new Main();
@@ -24,7 +26,7 @@ public class Main {
 
 	protected File selectFile() {
 		for(File file : listCsvFiles()) {
-			String userResponse = promptUserForCorrectFile();
+			String userResponse = promptUserForCorrectFile(file);
 			if(userResponse.toLowerCase().startsWith("y")) {
 				return file;
 			}
@@ -36,9 +38,12 @@ public class Main {
 		return new File(FOS_IMPORT_FILE);
 	}
 	
-	protected String promptUserForCorrectFile() {
-		// TODO Auto-generated method stub
-		return null;
+	protected String promptUserForCorrectFile(File file) {
+		if(scanner == null) {
+			scanner = new Scanner(System.in);
+		}
+		System.out.println("Is this the correct LDS MLS export file: " + file.getName() + "? [yes/no]");
+		return scanner.nextLine();
 	}
 	
 	protected void process(File ldsExportFile, File fosImportFile) {
