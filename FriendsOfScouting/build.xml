@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<project name="Friends Of Scouting" default="all" basedir=".">
+    
+    <property file="ant.properties"/>
+    
+    <target name="all" depends="clean,jar"/>
+    
+    <target name="clean">
+        <delete dir="${build}"/>
+        <delete dir="${dist}"/>
+    </target>
+    
+    <target name="prepare">
+        <mkdir dir="${build}"/>
+        <mkdir dir="${build.classes}"/>
+        <mkdir dir="${dist}"/>
+    </target>
+    
+    <target name="compile" depends="prepare">
+        <javac srcdir="${src}" destdir="${build.classes}" source="${java.compiler.version}" target="${java.compiler.version}" debug="true" includeantruntime="false">
+            <classpath>
+                <fileset dir="${lib}" includes="*.jar"/>
+            </classpath>
+        </javac>
+    </target>
+    
+    <target name="jar" depends="compile">
+        <jar jarfile="${dist}/${project.name}_${project.version}.jar">
+            <manifest>
+                <attribute name="Main-Class" value="${project.main.class}"/>
+            </manifest>
+            <fileset dir="${build.classes}" excludes="**/*Test.class"/>
+            <zipgroupfileset dir="${lib}" excludes="**/junit*.jar"/>
+        </jar>
+    </target>
+</project>
