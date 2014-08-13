@@ -28,6 +28,7 @@
         <jar jarfile="${dist}/${project.name}_${project.version}.jar">
             <manifest>
                 <attribute name="Main-Class" value="${project.main.class}"/>
+                <attribute name="Copyright" value="${project.copyright}"/>
             </manifest>
             <fileset dir="${build.classes}" excludes="**/*Test.class"/>
             <zipgroupfileset dir="${lib}" excludes="**/junit*.jar"/>

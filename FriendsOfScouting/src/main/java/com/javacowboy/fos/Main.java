@@ -5,11 +5,15 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.Scanner;
 
+import org.apache.commons.io.FileUtils;
+
 import com.javacowboy.fos.service.Processor;
 
 public class Main {
 	
 	static final String FOS_IMPORT_FILE = "./BSA Friends of Scouting Import.csv";
+	static final String LOG_FILE = "./log.txt";
+	protected File logFile;
 	protected Scanner scanner;
 	
 	public static void main(String[] args) {
@@ -28,10 +32,16 @@ public class Main {
 	}
 
 	protected File selectFile() {
-		for(File file : listCsvFiles()) {
-			String userResponse = promptUserForCorrectFile(file);
-			if(userResponse.toLowerCase().startsWith("y")) {
-				return file;
+		File[] csvFiles = listCsvFiles();
+		if(csvFiles != null) {
+			if(csvFiles.length == 1) {
+				return csvFiles[0];
+			}
+			for(File file : csvFiles) {
+				String userResponse = promptUserForCorrectFile(file);
+				if(userResponse.toLowerCase().startsWith("y")) {
+					return file;
+				}
 			}
 		}
 		return null;
@@ -74,7 +84,16 @@ public class Main {
 	}
 	
 	protected void log(String message) {
-		System.out.println(message);
+		if(logFile == null) {
+			logFile = new File(LOG_FILE);
+			logFile.delete();
+		}
+		try {
+			FileUtils.write(logFile, message + "\n", "UTF-8", true);
+		} catch (IOException e) {
+			System.out.println(message);
+			e.printStackTrace();
+		}
 	}
 
 }
