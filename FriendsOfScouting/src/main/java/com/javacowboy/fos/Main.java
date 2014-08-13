@@ -2,7 +2,10 @@ package com.javacowboy.fos;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.util.Scanner;
+
+import com.javacowboy.fos.service.Processor;
 
 public class Main {
 	
@@ -38,6 +41,20 @@ public class Main {
 		return new File(FOS_IMPORT_FILE);
 	}
 	
+	protected void process(File ldsExportFile, File fosImportFile) {
+		log(String.format("Processing file: %s", ldsExportFile.getName()));
+		log(String.format("Creating file: %s", fosImportFile.getName()));
+		fosImportFile.getParentFile().mkdirs();
+		Processor processor = new Processor();
+		try {
+			processor.process(ldsExportFile, fosImportFile);
+		} catch (IOException e) {
+			log("Error while converting LDS file format to BSA file format.");
+			e.printStackTrace();
+			System.exit(1);
+		}
+	}
+	
 	protected String promptUserForCorrectFile(File file) {
 		if(scanner == null) {
 			scanner = new Scanner(System.in);
@@ -46,17 +63,12 @@ public class Main {
 		return scanner.nextLine();
 	}
 	
-	protected void process(File ldsExportFile, File fosImportFile) {
-		log(String.format("Processing file: %s", ldsExportFile.getName()));
-		log(String.format("Creating file: %s", fosImportFile.getName()));
-	}
-	
 	protected File[] listCsvFiles() {
 		File directory = new File(".");
 		return directory.listFiles(new FilenameFilter() {
 			@Override
 			public boolean accept(File dir, String name) {
-				return name.toLowerCase().endsWith(".csv");
+				return name.toLowerCase().endsWith(".csv") && !name.equals(new File(FOS_IMPORT_FILE).getName());
 			}
 		});
 	}
