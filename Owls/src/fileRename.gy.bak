@@ -1,0 +1,203 @@
+#!/usr/bin/env groovy
+
+import java.text.SimpleDateFormat
+
+/* --------------------------------------------------------------------------------------------------------------------------
+            RULES:
+    Example original file name: Chesley Flat Recorder 1 - june 22 2012.wav
+    Example file name: Chesley Flat Recorder 1 - june 22 2012-0001.wav
+
+    1. original file name must NOT have more than one dash (-) in it
+    2. files to be renamed must have at least 2 dashes in them. The last dash followed by a number, followed by the file extendsion (.wav)
+    3. the date must come right before the last dash in the filename
+    4. the date pattern must be: full month name (space) numeric day (space) four digit year
+    5. there should be no space between the four digit year and the dash (-)
+
+ --------------------------------------------------------------------------------------------------------------------------*/
+//variables --------------------------------------------------------------------------------------------------------------------------
+DIRECTORY="../rename_test/"
+NIGHT_DIR = DIRECTORY + "nighttime"
+
+DEFAULT_START="1600"
+DEFAULT_NIGHT_START="1800"
+DEFAULT_NIGHT_END="0700"
+
+DATE_FORMAT="MMMMM dd yyyy" //June 23 2012
+TIME_FORMAT="kkmm'hrs'" //2300hrs
+DATE_TIME_FORMAT=DATE_FORMAT + "-" + TIME_FORMAT //June 23 2012-2300hrs
+
+dateFormatter = new SimpleDateFormat(DATE_FORMAT)
+timeFormatter = new SimpleDateFormat(TIME_FORMAT)
+outputFormatter = new SimpleDateFormat(DATE_TIME_FORMAT)
+
+//main --------------------------------------------------------------------------------------------------------------------------
+printWelcome()
+promptForVars()
+files = new File(DIRECTORY).listFiles(new SoundFileFilter())
+handleFiles(files)
+
+//methods --------------------------------------------------------------------------------------------------------------------------
+void printWelcome() {
+  println("Please enter the time the recorder was placed, the time night starts, and the time that night ends.")
+  println("Default values show in square brackets [].  Press Enter to accept the default, or type your own time.")
+  println("Times should be entered in 24 hour time.")
+}
+
+void promptForVars() {
+  System.in.withReader {
+    print("Start time" + printDefault(DEFAULT_START))
+    START_TIME=nullToDefault(it.readLine(), DEFAULT_START)
+    print("Night start time" + printDefault(DEFAULT_NIGHT_START))
+    NIGHT_BEGINS=nullToDefault(it.readLine(), DEFAULT_NIGHT_START)
+    print("Night end time" + printDefault(DEFAULT_NIGHT_END))
+    NIGHT_ENDS=nullToDefault(it.readLine(), DEFAULT_NIGHT_END)
+  }
+}
+
+String nullToDefault(value, defaultVal) {
+  value = value.replace(":", "")
+  if(value.trim().equals("")) {
+    return defaultVal
+  }
+  return value
+}
+
+String printDefault(value) {
+  return " [" + value + "]: "
+}
+
+void handleFiles(files){
+	if(files.size() < 2){
+		println("No files found to process in " + DIRECTORY)
+		return
+	}
+	list = sortFiles(files)
+	renameFiles(list)
+}
+
+List sortFiles(files){
+	list = new ArrayList(Arrays.asList(files))
+	Collections.sort(list, new AlphNumSorter())
+	return list
+}
+
+void renameFiles(list){
+    startDate = getStartDate(list.get(0).getName())
+		
+	list.each{file ->
+		origFileName = file.getName()
+		replaceFileName = getNewFileName(origFileName, startDate.getTime())
+        dir = DIRECTORY
+        if (isNightHour(startDate.getTime())) {
+            dir = NIGHT_DIR
+            new File(NIGHT_DIR).mkdirs()
+        }
+		newFile = new File(dir, replaceFileName)
+        println("RENAME: " + origFileName + " TO: " + newFile.getPath())
+		//file.renameTo(newFile)
+		startDate.add(Calendar.HOUR_OF_DAY, 1)
+	}
+}
+
+boolean isNightHour(date) {
+    def tempFormatter = new SimpleDateFormat("kkmm")
+    def time = tempFormatter.format(date)
+    def nightBegin = Integer.valueOf(NIGHT_BEGINS)
+    def nightEnds = Integer.valueOf(NIGHT_ENDS)
+    def timeInt = Integer.valueOf(time)
+    //println(nightBegin + " : " + nightEnds + " : " + timeInt)
+    if (timeInt >= nightBegin || timeInt <= nightEnds) {
+        return true
+    }
+    return false
+}
+
+String getDateStringFromFilename(fileName) {
+    //Chesley Flat Recorder 1 - june 22 2012-0001.wav
+    def end = fileName.lastIndexOf("-") //use def to make it local instead of global
+    baseFileName = fileName.substring(0, end)
+    //Chesley Flat Recorder 1 - june 22 2012
+    values = baseFileName.split(" ")
+    year = values[values.size() - 1]
+    day = values[values.size() - 2]
+    month = values[values.size() - 3]
+    dateSection = month + " " + day + " " + year
+    //june 22 2012
+    //make sure it's a valid date
+    Date test = dateFormatter.parse(dateSection)
+    return dateSection
+}
+
+String getNewFileName(origFileName, startDate){
+	start = origFileName.lastIndexOf("-")
+	end = origFileName.lastIndexOf(".")  //getDateStringFromFilename has a var named end, seems like this is a global instead of local variable
+	if(start > 0 && end > -1){
+        //Chesley Flat Recorder 1 - june 22 2012-0001.wav
+        dateStringInFilename = getDateStringFromFilename(origFileName)
+		baseFileName = origFileName.substring(0, start)//Chesley Flat Recorder 1 - june 22 2012
+        baseFileName = baseFileName.replace(dateStringInFilename, "")//Chesley Flat Recorder 1 -
+        extension = origFileName.substring(end, origFileName.size())//.wav
+		return baseFileName + outputFormatter.format(startDate) + extension  //Chesley Flat Recorder 1 - June 22 2012-1900hrs.wav
+	}
+	return origFileName
+}
+
+Calendar getStartDate(fileName){
+    dateStringInFilename = getDateStringFromFilename(fileName)
+    Date date = dateFormatter.parse(dateStringInFilename)
+	startHour = START_TIME.substring(0, START_TIME.size() - 2)
+	startMinute = START_TIME.substring(START_TIME.size() - 2, START_TIME.size())
+	cal = Calendar.getInstance();
+    cal.setTime(date)
+	cal.set(Calendar.HOUR_OF_DAY, Integer.valueOf(startHour))
+	cal.set(Calendar.MINUTE, Integer.valueOf(startMinute))
+	cal.set(Calendar.SECOND, 0)
+	return cal
+}
+
+//classes --------------------------------------------------------------------------------------------------------------------------
+class SoundFileFilter implements FileFilter
+{
+  def okFileExtensions = ["wav"]; //ignore this .gy script if it's in the same directory
+
+  public boolean accept(File file)
+  {
+  	def returnVal = false;
+    //ignore the original big wav.  acceptable files should have more than one dash in them
+    def fileName = file.getName()
+    def firstDash = fileName.indexOf("-")
+    def lastDash = fileName.lastIndexOf("-")
+  	if(!firstDash.equals(lastDash)){
+	  	okFileExtensions.each{ 
+	  		if(file.getName().toLowerCase().endsWith(it)){
+		  		returnVal = true;
+		  		return; //exit closure
+	  		}
+	  	}
+	}
+  	return returnVal;
+  }
+}
+
+//The Alphanum Algorithm is discussed at http://www.DaveKoelle.com
+class AlphNumSorter implements Comparator {
+    def compRegEx = /(\d+(?:[.]?\d+)?)|\D+/
+
+    int compare(Object obj1, Object obj2) {
+        def m1 = obj1 =~ compRegEx
+        def m2 = obj2 =~ compRegEx
+
+        def result = 0
+        def limit = Math.min(m1.size(),  m2.size())
+        for (int i = 0; !result && i < limit; i++) {
+            if (m1[i][1]) {
+                result = m2[i][1] ? m1[i][1].toDouble() - m2[i][1].toDouble() : -1
+            }
+            else {
+                result = m2[i][1] ? 1 : m1[i][0].compareToIgnoreCase(m2[i][0])
+            }
+        }
+
+        return (!result && (m1.size() != m2.size())) ? m1.size() - m2.size() : result
+    }
+}

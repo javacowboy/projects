@@ -1,0 +1,6 @@
+input*/
+output/
+src/*.txt
+src/*.csv
+rename*/
+test/

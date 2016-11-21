@@ -1,0 +1,69 @@
+#!/bin/env groovy
+
+import groovy.util.AntBuilder
+
+//vars
+TOP_DIR = "../test/" //my computer
+//TOP_DIR = "C:/Users/Owner/My Documents/2012 CHRIS TL/2012 CHRIS SURVEYS/" //amandas computer
+FROM_DIR_PATTERN = "PAC"
+DATA_DIR_NAME = "DATASHEETS"
+TO_DIR = TOP_DIR + "All Tony's datasheets"
+ignoreHiddenFiles=true
+
+//main
+top = new File(TOP_DIR)
+if (!top.exists()) {
+    println("Top directory does not exist: " + TOP_DIR)
+} else {
+    handleTopDirectory(top)
+}
+
+//methods
+void handleTopDirectory(top) {
+    top.listFiles().each { folder ->
+        if (folder.isDirectory() && folder.getName().startsWith(FROM_DIR_PATTERN)) {
+            folder.listFiles().each { subFolder ->
+                if (subFolder.isDirectory() && subFolder.getName().equals(DATA_DIR_NAME)) {
+                    copyFiles(subFolder, new File(TO_DIR))
+                }
+            }
+        }
+    }
+}
+
+void copyFiles(fromDir, toDir) {
+    println("")
+    toDir.mkdirs()
+    println("Copying From: " + fromDir.getPath())
+    println("Copying To:" + toDir.getPath())
+    fromDir.listFiles().each{ srcFile ->
+        if (ignoreHiddenFiles && srcFile.getName().startsWith(".")) {
+            return
+        }
+        if (srcFile.isFile()) {
+            destFile = new File(toDir, srcFile.getName())
+            println("Copying File:" + destFile.getName())
+            input = srcFile.newDataInputStream()
+            output = destFile.newDataOutputStream()
+            output << input
+            input.close()
+            output.close()
+        }
+    }
+}
+
+/*
+void copyFiles(fromDir, toDir) {
+    println("")
+    println("Copying From: " + fromDir.getPath())
+    toDir.mkdirs()
+    fromDir.listFiles().each { srcFile ->
+        if (ignoreHiddenFiles && srcFile.getName().startsWith(".")) {
+            return
+        }
+        if (srcFile.isFile()) {
+            destFile = new File(toDir, srcFile.getName())
+            new AntBuilder().copy(file: srcFile, tofile: destFile, overwrite: true)
+        }
+    }
+}*/

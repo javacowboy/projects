@@ -1,0 +1,1666 @@
+#!/usr/bin/env groovy
+
+import java.text.SimpleDateFormat
+import java.text.ParseException
+
+//vars
+INPUT_DIR="../input" //my computer
+INPUT_DIR="C:/Users/Owner/Dropbox/2013 MT GRAHAM MSO not for USFS/test conversion files" //amanda's computer
+
+OUTPUT_DIR="./"
+OUTPUT_FILE=OUTPUT_DIR + "output.csv"
+USFS_FILE=OUTPUT_DIR + "usfs.csv"
+
+//vars that need to be reset after each file
+isDateFound = false
+isSurveyNumFound = false
+searchingWeather = false
+searchingCallPoints=false
+searchingTimes = false
+searchingData = false
+detailData = null
+usfsCallPoint = null
+surveyType = null
+searchTimeType = null
+searchLineNumber = 0
+
+//record number is an auto primary key controlled outside this code
+currentRecordNum = null
+
+//include files with "aborted" in the name
+includeAbortedFiles = null
+
+//main----------------------------------------------------------------------------------------
+if(args.size() > 0) {
+	if(isNumber(args[0])){
+		currentRecordNum = Long.parseLong(args[0])
+	}
+	if(args.size() == 2){
+		includeAbortedFiles = args[1].toLowerCase().startsWith("n") ? false : true
+	}
+}
+checkForRecordNumber()
+
+
+//methods----------------------------------------------------------------------------------------
+void checkForRecordNumber() {
+	if(currentRecordNum == null) {
+		promptForRecordNumber()
+	}else {
+		checkForAbortedFiles()
+	}
+}
+
+void checkForAbortedFiles() {
+	if(includeAbortedFiles == null) {
+		promptForAbortedFiles()
+	}else {
+		execute()
+	}
+}
+
+void promptForRecordNumber() {
+	System.in.withReader{
+		println("What should the first record number be?")
+		input = it.readLine()
+		if(isNumber(input)) {
+			currentRecordNum = Long.parseLong(input)
+		}else {
+			println("Not a valid number.")
+		}
+		checkForRecordNumber()
+	}
+}
+
+void promptForAbortedFiles() {
+	System.in.withReader{
+		println("Process aborted files?")
+		input = it.readLine()
+		if(input != null && !input.isEmpty() && input.toLowerCase().charAt(0) == "n") {
+			includeAbortedFiles = false
+		}else {
+			includeAbortedFiles = true
+		}
+		checkForAbortedFiles()
+	}
+}
+
+void execute() {
+	clean()
+	appendToOutputFile(OwlData.getHeader(), false)
+    appendToUsfsFile(USFSData.getHeader(), false)
+	println("Searching directory: " + INPUT_DIR)
+	handlePath(new File(INPUT_DIR))
+}
+
+void reset() {
+	isDateFound = false
+	isSurveyNumFound = false
+	resetDataSearch()
+	resetWeatherSearch()
+	resetTimeSearch()
+}
+
+void resetDataSearch() {
+	searchingData = false
+	detailData = null
+	searchLineNumber = 0
+}
+
+void resetWeatherSearch() {
+	searchingWeather = false
+	searchLineNumber = 0
+}
+
+void resetTimeSearch() {
+	searchingTimes = false
+	searchTimeType = null
+	searchLineNumber = 0
+}
+
+void resetCallPointSearch() {
+  searchingCallPoints = false
+  searchLineNumber = 0
+}
+
+DetailData getDetailData(){
+	if(detailData == null) {
+		println("Creating a new DetailData")
+		detailData = new DetailData()
+	}
+	return detailData
+}
+
+USFSCallPoint getUsfsCallPoint(){
+  if(usfsCallPoint == null){
+    println("Creating a new USFSCallPoint")
+    usfsCallPoint = new USFSCallPoint()
+  }
+  return usfsCallPoint
+}
+
+void handlePath(path){
+  if(path.isDirectory()){
+    path.listFiles().each{ handlePath(it) }
+  } else if(path.isFile() && path.getName().contains(".txt")){
+    handleFile(path)
+  }
+}
+
+void handleFile(file){
+	if(includeFile(file)) {
+		println("Processing file: " + file.getName())
+		reset()
+		owlData = new OwlData(file, currentRecordNum)
+        usfsData = new USFSData()
+		file.eachLine{ line ->
+			parseLine(line, owlData, usfsData)
+  		}
+  		appendToOutputFile(owlData.toString())
+        if(usfsData.isNightSurvey()) {
+          appendToUsfsFile(usfsData.toString(), false)
+        }
+  		if(currentRecordNum != null ) currentRecordNum++
+	}else {
+		println("--Skipped file--: " + file.getName())
+	}
+}
+
+boolean includeFile(file) {
+	if(includeAbortedFiles != null && !includeAbortedFiles) {
+		return !file.getName().toLowerCase().contains("aborted")
+	}
+	return true
+}
+
+void parseLine(line, owlData, usfsData){
+  parseDate(line, owlData)
+  parseDistrict(line, owlData)
+  parseForest(line, owlData)
+  parseObservers(line, owlData)
+  parseRange(line, owlData)
+  parseResult(line, owlData)
+  parsePAC(line, owlData, usfsData)
+  parsePredawn(line, owlData)
+  parseAreaCovered(line, owlData)
+  parseQuadMapName(line, owlData)
+  parseMonitoringType(line, owlData)
+  parseSunrise(line, owlData)
+  parseSunset(line, owlData)
+  parseMoonPhase(line, owlData)
+  parseSurveyNumber(line, owlData)
+  parseOutingNumber(line, owlData)
+  parseAborted(line, owlData)
+  parseCompleted(line, owlData)
+  parseTimes(line, owlData)
+  parseWeather(line, owlData)
+  parseCallPoints(line, usfsData)
+  parseDataTable(line, owlData, usfsData)
+  parseMiceUsed(line, owlData)
+  parseNestingStatus(line, owlData)
+}
+
+void clean(){
+	file = new File(OUTPUT_FILE)
+	if(file.exists()){
+		file.delete()
+	}
+    file = new File(USFS_FILE)
+    if(file.exists()) {
+      file.delete()
+    }
+}
+
+void appendToOutputFile(data) {
+	appendToOutputFile(data, true)
+}
+
+void appendToUsfsFile(data) {
+  appendToUsfsFile(data, true)
+}
+
+void appendToOutputFile(data, withBreak){
+	file = new File(OUTPUT_FILE)
+	if(withBreak) {
+		file.append("\r\n")
+	}
+	file.append(data)
+}
+
+void appendToUsfsFile(data, withBreak){
+  file = new File(USFS_FILE)
+  if(withBreak) {
+    file.append("\r\n")
+  }
+  file.append(data)
+}
+
+boolean isNumber(value){
+	try{
+		Integer.parseInt(String.valueOf(value))
+		return true
+	}catch (NumberFormatException e){
+		return false
+	}
+}
+
+boolean lineEquals(line, value) {
+	if(line.trim().equals(value)) {
+		return true
+	}
+	return false
+}
+
+boolean isNullOrEmpty(value) {
+	if(value == null) {
+		return true
+	}
+	return value.trim().equals("")
+}
+
+//Cut the remainder of the text out starting at the cutValue
+String cut(value, cutValue){
+	if(value.contains(cutValue)){
+		value = value.substring(0, value.indexOf(cutValue))
+	}
+	return value
+}
+
+//parser methods ----------------------------------------------------------------------------------------------------
+void parseDate(line, owlData){
+  value = parseFor(Keyword.DATE, line)
+  if(value != null && !isDateFound){
+	isDateFound = true
+  	if(value.contains(",")){
+  		splitDate(value, "MMM dd, yyyy", owlData)
+  	}else if(value.contains("/")){
+  		splitDate(value, "MM/d/yyyy", owlData)
+  	}else if(value.split(" ").size() == 3){
+  		splitDate(value, "dd MMM yyyy", owlData)
+  	}else{
+    	owlData.month = value
+    }
+  }
+}
+
+void splitDate(value, datePattern, owlData){
+	try {
+		formatter = new SimpleDateFormat(datePattern)
+		date = formatter.parse(value)
+		//println("Was: " + value + " Now: " + date)
+		if(date != null){
+			formatter = new SimpleDateFormat("MMMM")
+			owlData.month = formatter.format(date)
+			formatter = new SimpleDateFormat("d")
+			owlData.day = formatter.format(date)
+			formatter = new SimpleDateFormat("yyyy")
+			owlData.year = formatter.format(date)
+		}
+	}catch(ParseException e) {
+		println("!!Error!!: " + value + " doesn't match pattern: " + datePattern)
+		owlData.month = value
+	}
+}
+
+void parseDistrict(line, owlData){
+  value = parseFor(Keyword.DISTRICT, line)
+  if(value != null){
+    owlData.district = value
+  }
+}
+
+void parseForest(line, owlData){
+  value = parseFor(Keyword.FOREST, line)
+  if(value != null){
+    owlData.forest = value
+  }
+}
+
+void parseObservers(line, owlData){
+  value = parseFor(Keyword.OBSERVER, line)
+  if(value != null){
+  	if(value.contains(",")){
+  		observers = value.split(",")
+  		for(i=0; i<observers.size() && i<3; i++){
+  			if(i == 0){
+  				owlData.observer1 = observers[0]
+  			}
+  			if(i == 1){
+  				owlData.observer2 = observers[1]
+  			}
+  			if(i == 2){
+  				owlData.observer3 = observers[2]
+  			}
+  		}
+  	}else{
+    	owlData.observer1 = value
+    }
+  }
+}
+
+void parseRange(line, owlData){
+  value = parseFor(Keyword.RANGE, line)
+  if(value != null){
+    owlData.range = value
+  }
+}
+
+void parseResult(line, owlData){
+  value = parseToLineEnd(Keyword.RESULT_DAY, line)
+  if(value != null){
+    owlData.setResult(value)
+	return
+  }
+  
+  value = parseToLineEnd(Keyword.RESULT_NIGHT, line)
+  if(value != null){
+    owlData.setResult(value)
+  }
+}
+
+void parseAreaCovered(line, owlData){
+	value = parseFor(Keyword.AREA_COVERED, line)
+	if(value != null){
+		owlData.areaCovered = value
+	}
+}
+
+void parseQuadMapName(line, owlData){
+	value = parseFor(Keyword.QUAD_MAP_DAY, line)
+	if(value != null){
+		owlData.quadMapName = value
+		return
+	}
+	
+	value = parseFor(Keyword.QUAD_MAP_NIGHT, line)
+	if(value != null){
+		owlData.setQuadMapName(value)
+	}
+}
+
+void parseMonitoringType(line, owlData){
+	value = parseFor(Keyword.MONITOR_TYPE, line)
+	if(value != null){
+		owlData.monitorType = value
+	}
+
+    value = parseFor(Keyword.MONITOR_TYPE_NIGHT, line)
+    if (value != null) {
+        owlData.monitorType = value
+    }
+}
+
+void parseSunrise(line, owlData){
+	value = parseFor(Keyword.SUNRISE_TIME, line)
+	if(value != null){
+		owlData.setSunriseTime(value)
+	}
+	value = parseFor(Keyword.SUNRISE_TIME_TWO, line)
+	if(value != null){
+		owlData.setSunriseTime(value)
+	}	
+}
+
+void parseSunset(line, owlData){
+	value = parseFor(Keyword.SUNSET_TIME, line)
+	if(value != null){
+		owlData.setSunsetTime(value)
+	}
+	value = parseFor(Keyword.SUNSET_TIME_TWO, line)
+	if(value != null){
+		owlData.setSunsetTime(value)
+	}
+}
+
+void parseMoonPhase(line, owlData){
+  value = parseFor(Keyword.MOON_PHASE, line)
+  if(value != null){
+      owlData.setMoonPhase(value)
+  }
+}
+
+void parsePAC(line, owlData, usfsData){
+  value = parseFor(Keyword.PAC_DAY_NAME, line)
+  if(value != null){
+    owlData.pacName = value
+    usfsData.pacName = value
+  }
+  
+  value = parseFor(Keyword.PAC_DAY_NUMBER, line)
+  if(value != null){
+  	owlData.pacNumber = value
+    usfsData.pacNumber = value
+  	return
+  }
+  
+  value = parseFor(Keyword.PAC_NIGHT, line)
+  if(value != null){
+  	splitPacData(value, owlData, usfsData)
+  }
+}
+
+void splitPacData(value, owlData, usfsData){
+	println("Splitting PAC: " + value)
+	number = ""
+	for(char c : value.toCharArray()){
+		if(isNumber(c)){
+			number += c
+		}
+	}
+	if(!number.isEmpty()){
+		owlData.pacNumber = number
+        usfsData.pacNumber = number
+	}
+	//one worker puts the pac number in parens ().  remove the parens and the number from the name
+	owlData.pacName = value.replace(number, "").replace("()", "").trim()
+    usfsData.pacName = owlData.pacName
+}
+
+String parseSurveyNumber(line, owlData) {
+	value = parseFor(Keyword.SURVEY_NUMBER_DAY, line)
+	if(value != null && !isSurveyNumFound) {
+		isSurveyNumFound = true
+		//println(value + " : " + owlData.fileName())
+		owlData.surveyNumber = value
+		return
+	}
+	
+	value = parseFor(Keyword.SURVEY_NUMBER_NIGHT, line)
+	if(value != null && !isSurveyNumFound) {
+		isSurveyNumFound = true
+		//println(value + " : " + owlData.fileName())
+		owlData.surveyNumber = value
+	}
+}
+
+String parseOutingNumber(line, owlData) {
+	value = parseFor(Keyword.OUTING_NUMBER, line)
+	if(value != null) {
+		//println(value + " : " + owlData.fileName())
+		owlData.outingNumber = value
+	}
+}
+
+String parsePredawn(line, owlData) {
+    value = parseFor(Keyword.PREDAWN, line)
+    if (value != null) {
+        owlData.predawn = value
+    }
+}
+
+String parseAborted(line, owlData) {
+    value = parseFor(Keyword.ABORTED, line)
+    if (value != null) {
+        owlData.aborted = value
+    }
+}
+
+String parseCompleted(line, owlData) {
+    value = parseFor(Keyword.COMPLETED, line)
+    if (value != null) {
+        //The next value is Surevey Area Completed, looks like a % was prepended. remove % instead of altering a working keyword
+        value = value.replace("%", "")
+        owlData.completed = value
+    }
+}
+
+String parseMiceUsed(line, owlData) {
+	value = parseFor(Keyword.NUMBER_MICE, line)
+	if(value != null) {
+		owlData.miceUsed = value
+	}
+}
+
+String parseNestingStatus(line, owlData) {
+	value = parseFor(Keyword.NESTING_STATUS, line)
+	if(value != null){
+		owlData.nestingStatus = value
+	}
+}
+
+void parseWeather(line, owlData) {
+	//sometimes the time variables are followed by ":" and sometimes not
+	//remove ":" for consistency
+	line = line.replace(":", "")
+	
+	if(lineEquals(line, Keyword.WEATHER.getText())) {
+		searchingWeather = true
+		searchLineNumber = 0
+		resetTimeSearch()
+		getDetailData() //creates new if null
+	}
+	
+	if(searchingWeather) {
+        //sometimes there is 2 spaces and sometimes only 1 space in between Weather: Survey and Start
+        if (searchLineNumber == 3 && line.trim().equals("")) {
+            println("Ignoring extra line in weather data.")
+            searchLineNumber--
+        }
+        if (searchLineNumber == 6) {
+            line = line.replace("<", "")
+            line = line.replace(">", "")
+            detailData.setWind(line)
+        }
+        if (searchLineNumber == 7) {
+            line = line.replace("–", "--") //long dash in Word
+            line = line.replace("<", "")
+            line = line.replace(">", "")
+            if (detailData.wind != null && !detailData.wind.contains("-")) {
+                detailData.setWind(detailData.wind + "-" + line)
+            } else {
+                detailData.setWind(line)
+            }
+        }
+        if (searchLineNumber == 9) {
+            detailData.cloud = line
+        }
+        if (searchLineNumber == 10) {
+            if (isNullOrEmpty(detailData.cloud)) {
+                detailData.cloud = line
+            } else if (detailData.cloud.equals("0") && !isNullOrEmpty(line)) {
+                detailData.cloud = line
+            }
+        }
+        if (searchLineNumber == 12) {
+            detailData.water = line
+        }
+        if (searchLineNumber == 13) {
+            if (detailData.water != null && !detailData.water.equals(line)) {
+                detailData.water = detailData.water + "-" + line
+            }
+        }
+        if (searchLineNumber == 15) {
+            detailData.temp = line
+        }
+        if (searchLineNumber == 16) {
+            if (detailData.temp != null && !detailData.temp.equals(line)) {
+                detailData.temp = detailData.temp + "-" + line
+            }
+            resetWeatherSearch(); return;
+        }
+        searchLineNumber++
+    }
+}
+
+void parseTimes(line, owlData) {
+	if(searchingWeather) {
+		return
+	}
+	//sometimes the time variables are followed by ":" and sometimes not
+	//remove ":" for consistency
+	line = line.replace(":", "")
+	
+	if(lineEquals(line, Keyword.SURVEY_TIME.getText())) {
+		searchingTimes = true
+		searchTimeType = Keyword.SURVEY_TIME
+		searchLineNumber = 0
+	}
+	if(lineEquals(line, Keyword.HIKE_IN.getText())) {
+		searchingTimes = true
+		searchTimeType = Keyword.HIKE_IN
+		searchLineNumber = 0
+	}
+	if(lineEquals(line, Keyword.HIKE_OUT.getText())) {
+		searchingTimes = true
+		searchTimeType = Keyword.HIKE_OUT
+		searchLineNumber = 0
+	}
+	
+	if(searchingTimes) {
+		switch(searchTimeType) {
+			case Keyword.SURVEY_TIME:
+				if(searchLineNumber == 1) {
+					owlData.surveyStartTime = line
+				}else if(searchLineNumber == 2) {
+					owlData.surveyEndTime = line
+				}else if(searchLineNumber == 3) {
+					owlData.surveyTotalTime = line
+					resetTimeSearch()
+				} 
+			break;
+			case Keyword.HIKE_IN:
+				if(searchLineNumber == 1) {
+					owlData.hikeInStartTime = line
+				}else if(searchLineNumber == 2) {
+					owlData.hikeInEndTime = line
+				}else if(searchLineNumber == 3) {
+					owlData.hikeInTotalTime = line
+					resetTimeSearch()
+				}
+			break;
+			case Keyword.HIKE_OUT:
+				if(searchLineNumber == 1) {
+					owlData.hikeOutStartTime = line
+				}else if(searchLineNumber == 2) {
+					owlData.hikeOutEndTime = line
+				}else if(searchLineNumber == 3) {
+					owlData.hikeOutTotalTime = line
+					resetTimeSearch()
+				}
+			break;
+		}
+		searchLineNumber++
+	}
+}
+
+String parseToLineEnd(keyword, line){
+	returnValue = null
+	if(line.contains(keyword.getText())){
+		start = line.indexOf(keyword.getText()) + keyword.getText().size()
+		returnValue = line.substring(start, line.size()).trim()
+	}
+	return returnValue
+}
+
+String parseFor(keyword, line){
+	returnValue = null
+	if(line.contains(keyword.getText())){
+	  returnValue = ""
+	  start = line.indexOf(keyword.getText()) + keyword.getText().size()
+	  end = line.size()
+	  rightSide = line.substring(start, end)
+	  rightSide = rightSide.replace("\t", " ")
+	  parts = rightSide.split(" ")
+	  //println(parts)
+	  println("Searching for: " + keyword.getText() + " in -- " + line)
+	  for(String part : parts){
+		 if(Keyword.isAKeyword(part)){
+		   println("Stopping search at keyword: " + part)
+		   break
+		 }else {
+		   returnValue += part.trim() + " "
+		 }
+	  }
+	  returnValue = returnValue.trim()
+	}
+	return returnValue
+}
+
+void parseCallPoints(line, usfsData) {
+  if(lineEquals(line, "UTMs of New or Intermediate Call Points or Routes (not already mapped):")){
+    searchingCallPoints = true
+    searchLineNumber = -7 //7 more header rows before data starts
+    getUsfsCallPoint() //creates new if null
+    return
+  }
+
+  if(searchingCallPoints) {
+    searchLineNumber++
+    if(searchLineNumber > 0) {
+      /*
+      *table might convert to: 28 lines (7 fields per row * 4 rows)
+      */
+      END_ROW_LINE = 7
+
+      //this row have data?  or we're to the key under the table.
+      if(searchLineNumber == 1 && (isNullOrEmpty(line) || line.contains("Sunrise or Sunset Time"))) {
+          resetCallPointSearch()
+          return
+      }
+
+      //values can be found twice on one row
+      if(searchLineNumber == 1 || searchLineNumber == 5){
+        usfsCallPoint.name = line
+      }
+      if(searchLineNumber == 2 || searchLineNumber == 6){
+        usfsCallPoint.utmE = line
+      }
+      if(searchLineNumber == 3 || searchLineNumber == 7){
+        usfsCallPoint.utmN = line
+      }
+
+      //check to see if we're handling the group of data
+      if(searchLineNumber % 3 == 0) {
+          if(!isNullOrEmpty(usfsCallPoint.name)) {
+              usfsData.callPoints.add(usfsCallPoint)
+          }
+          usfsCallPoint = new USFSCallPoint()
+      }
+      if(searchLineNumber % END_ROW_LINE == 0) {
+          if(!isNullOrEmpty(usfsCallPoint.name)) {
+              usfsData.callPoints.add(usfsCallPoint)
+          }
+          usfsCallPoint = new USFSCallPoint()
+          searchLineNumber = 0
+      }
+    }
+  }
+
+}
+
+void parseDataTable(line, owlData, usfsData) {
+	if(lineEquals(line, Keyword.UTM_NORTH_NIGHT.getText())) {
+		searchingData = true
+		searchLineNumber = -2 //two more text rows before data starts
+		surveyType = SurveyType.NIGHT
+		owlData.surveyType = SurveyType.NIGHT
+        usfsData.surveyType = SurveyType.NIGHT
+		getDetailData() //creates new if null
+	}
+	if(lineEquals(line, Keyword.UTM_NORTH_DAY.getText())) {
+		searchingData = true
+		searchLineNumber = 0
+		surveyType = SurveyType.DAY
+		owlData.surveyType = SurveyType.DAY
+        usfsData.surveyType = SurveyType.DAY
+		//get() creates new if null
+		//getDetailData().species = "STOC" //per amanda all day sheets are STOC
+        getDetailData() //still need to call the getter to create new if null (just not setting species here anymore
+	}
+	
+	/*
+	*night: table might convert to: 120 lines (20 fields per row * 6 rows)
+	*day: table might convert to: 42 lines (7 fields per row * 6 rows)
+	*/
+	NIGHT_END_ROW_LINE = 20
+	DAY_END_ROW_LINE = 7
+	
+	if(searchingData) {
+		//UTM N of owl vs. UTM N of owl (estimated) -- off by 1 line
+		if(surveyType == SurveyType.NIGHT && searchLineNumber == 0) {
+			if(!lineEquals(line, "(estimated)")) {
+				searchLineNumber++
+			}
+		}
+		
+		if(searchLineNumber > 0) {
+		switch(surveyType) {
+			case SurveyType.DAY:
+				//this row have data?
+				if(searchLineNumber == 1 && (isNullOrEmpty(line) || isStartDayLegend(line))) {
+                    //could be no data in the data table, but still data in other tables
+                    if(detailData != null && owlData.details.isEmpty()) {
+                        owlData.details.add(detailData)
+                    }
+					resetDataSearch()
+					return
+				}
+				handleDayData(line, owlData, detailData)
+				//check to see if we're handling the next row
+				if(searchLineNumber % DAY_END_ROW_LINE == 0) {
+					if(detailData != null) {
+						owlData.details.add(detailData)
+					}
+					detailData = new DetailData(detailData)
+					//detailData.species = "STOC" //per amanda all day sheets are STOC
+					searchLineNumber = 0
+				}
+				break;
+			case SurveyType.NIGHT:
+				//this row have data?  or we're to the key under the table.
+				if(searchLineNumber == 1 && (isNullOrEmpty(line) || isStartNightLegend(line))) {
+					resetDataSearch()
+					return
+				}
+				handleNightData(line, owlData, detailData)
+				//check to see if we're handling the next row
+				if(searchLineNumber % NIGHT_END_ROW_LINE == 0) {
+					if(detailData != null) {
+						owlData.details.add(detailData)
+					}
+					detailData = new DetailData()
+					searchLineNumber = 0
+				}
+				break;
+		}
+		}
+		searchLineNumber++
+	}
+}
+
+boolean isStartDayLegend(line){
+	return line.toLowerCase().contains("Use the following codes".toLowerCase())
+}
+
+boolean isStartNightLegend(line){
+	return line.toLowerCase().contains("SM (Survey Method)".toLowerCase())
+}
+
+void handleDayData(line, owlData, detailData) {
+	if(searchLineNumber == 1) {
+		detailData.species = line
+	}
+	if(searchLineNumber == 2) {
+		detailData.sex = line
+	}
+	if(searchLineNumber == 3) {
+		detailData.age = line
+	}
+	if(searchLineNumber == 4) {
+		detailData.obsType = line 
+	}
+	if(searchLineNumber == 5) {
+		detailData.time = line
+	}
+	if(searchLineNumber == 6) {
+		detailData.utmE = line
+	}
+	if(searchLineNumber == 7) {
+		detailData.utmN = line
+	}
+}
+
+void handleNightData(line, owlData, detailData) {
+		 if(searchLineNumber == 1) {
+			 detailData.routeNumber = line
+		 }
+		 if(searchLineNumber == 2) {
+			 detailData.callMethod = line
+		 }
+		 if(searchLineNumber == 3) {
+			 detailData.method = line
+		 }
+		 if(searchLineNumber == 4) {
+			 detailData.start = line
+		 }
+		 if(searchLineNumber == 5) {
+			 detailData.end = line
+		 }
+		 if(searchLineNumber == 6) {
+			 detailData.total = line
+		 }
+		 if(searchLineNumber == 7) {
+			 detailData.moon = line
+		 }
+		 if(searchLineNumber == 8) {
+			 detailData.setWind(line)
+		 }
+		 if(searchLineNumber == 9) {
+			 detailData.cloud = line
+		 }
+		 if(searchLineNumber == 10) {
+			 detailData.water = line
+		 }
+		 if(searchLineNumber == 11) {
+			 detailData.temp = line
+		 }
+		 if(searchLineNumber == 12) {
+			 detailData.obsType = line
+		 }
+		 if(searchLineNumber == 13) {
+			 detailData.sex = line
+		 }
+		 if(searchLineNumber == 14) {
+			 detailData.age = line
+		 }
+		 if(searchLineNumber == 15) {
+			 detailData.species = line
+		 }
+		 if(searchLineNumber == 16) {
+			 detailData.time = line
+		 }
+		 if(searchLineNumber == 17) {
+			 detailData.bearing = line
+		 }
+		 if(searchLineNumber == 18) {
+			 detailData.distance = line
+		 }
+		 if(searchLineNumber == 19) {
+			 detailData.utmE = line
+		 }
+		 if(searchLineNumber == 20) {
+			 detailData.utmN = line
+		 }
+}
+
+//end parser methods ------------------------------------------------------------------------------------------------
+
+//classes -----------------------------------------------------------------------------------------------------------
+enum SurveyType{
+	DAY("Daytime"),
+	NIGHT("Nighttime");
+	
+	private String text
+	private SurveyType(String text) {
+		this.text = text
+	}
+	public String getText() { return text; }
+}
+
+enum Keyword {
+  DATE("Date:"),
+  DISTRICT("District:"),
+  FOREST("Forest:"),
+  OBSERVER("Observers:"),
+  RANGE("Mountain Range:"),
+  RESULT_DAY("Survey Results:"),
+  RESULT_NIGHT("Visit Results:"),
+  PAC_DAY_NAME("PAC Name:"),
+  PAC_DAY_NUMBER("PAC number:"),
+  PAC_NIGHT("PAC Name and Number:"),
+  PREDAWN("Survey Started Predawn?"),
+  ABORTED("Survey Aborted?"),
+  COMPLETED("Survey Completed?"),
+  AREA_COVERED("Survey Area Covered:"),
+  QUAD_MAP_DAY("Quad map name(s):"),
+  QUAD_MAP_NIGHT("Quad Map Name(s):"),
+  MONITOR_TYPE("Monitoring Type:"),
+  MONITOR_TYPE_NIGHT("Program Objective:"),
+  SUNRISE_TIME("Sunrise:"),
+  SUNRISE_TIME_TWO("Sunrise Time:"),
+  SUNSET_TIME("Sunset:"),
+  SUNSET_TIME_TWO("Sunset Time:"),
+  MOON_PHASE("Moon phase:"),
+  HABITAT("General habitat:"),
+  SURVEY_NUMBER_DAY("Visit#:"),
+  SURVEY_NUMBER_NIGHT("Survey #:"),
+  OUTING_NUMBER("Outing #:"),
+  HIKE_IN("Hike-in"),
+  HIKE_OUT("Hike-out"),
+  SURVEY_TIME("Survey"),
+  WEATHER("Weather"),
+  UTM_NORTH_DAY("UTM-N"),
+  UTM_NORTH_NIGHT("UTM N"),
+  NUMBER_MICE("Number Used:"),
+  NESTING_STATUS("Current Nesting Status:"),
+  OTHER_RAPTORS("Other raptors seen or heard during survey:")
+
+  String text
+  private Keyword(text){
+    this.text = text
+  }
+
+  public String getText(){
+    return text
+  }
+
+  public static boolean isAKeyword(text){
+    for(Keyword key : Keyword.values()){
+      if(key.getText().equals(text)){
+        return true
+      }
+      //kind of a hack for multi word keywords
+      def parts = key.getText().split(" ")
+      if(parts.size() > 1){
+        for(String part : parts){
+          //don't compare common words
+          if(!part.equals("and") && !part.equals("of") && !part.equals("one") && !part.equalsIgnoreCase("N")){
+	          if(part.equals(text)){
+	            return true
+	          }
+	      }
+        }
+      }
+    }
+    return false
+  }
+}
+
+class OwlData {
+
+  //an enum to keep track of the order to export the data
+  public enum COLUMN {
+  	FILENAME("Orig File"),
+  	RECORD("Record"),
+  	AREA("Study Area"),
+  	FOREST("NF Name"),
+  	DISTRICT("RD Name"),
+  	PAC_NAME("PAC Name"),
+  	PAC_NUMBER("PAC Full No."),
+  	RANGE("Mountain Range"),
+  	QUADRANT("Quad Name"),
+  	MONITOR_TYPE("Monitoring Type"),
+  	SUNRISE("Sunrise"),
+  	SUNSET("Sunset"),
+  	MONTH("Month"),
+  	DAY("Day"),
+  	YEAR("Year"),
+  	OBJECTIVE("Prog. Objc"),
+  	SURVEY_TYPE("Survey Type"),
+  	SURVEY_NUMBER("Survey No."),
+  	SURVEY_OUT("Survey Out."),
+  	PREDAWN("Pre-dawn?"),
+  	ABORT("Abort?"),
+  	COMPL("Compl?"),
+  	SURVEY_PERCENT("% Surv."),
+  	OBSERVER_ONE("Observer 1"),
+  	OBSERVER_TWO("Observer 2"),
+  	OBSERVER_THREE("Observer 3"),
+  	RESULTS("Visit Results"),
+  	START_TIME("Survey Start Time"),
+  	END_TIME("Survey End Time"),
+  	HOURS("Survey Hours"),
+  	HIKE_HOURS("Hiking Hours"),
+  	CPRT("CP or RT"),
+  	ROUTE_ID("CP or RT ID"),
+  	METHOD("Surv. Meth."),
+  	CALL_METHOD("Call Meth."),
+  	ROUTE_START_TIME("Route Start"),
+  	ROUTE_END_TIME("Route End"),
+  	ROUTE_TOTAL("Route Total"),
+  	MOON("Moon?"),
+    MOON_PHASE("Moon Phase"),
+  	WIND_MIN("Wind min"),
+  	WIND_MAX("Wind max"),
+  	CC_PERCENT("CC%"),
+  	PPT("PPT?"),
+  	TEMP_MIN("Temp min"),
+	TEMP_MAX("Temp max"),
+  	OBS_TYPE("Obs. Type"),
+  	SEX("Sex"),
+  	AGE("Age"),
+  	SPP("Spp"),
+  	RESPONSE_TIME("Resp. Time"),
+  	BEARING("Bearing degrees"),
+  	DISTANCE("Distance"),
+  	UTM_EAST("UTM E"),
+  	UTM_NORTH("UTM N"),
+  	MICE_COUNT("Mice Used"),
+  	NESTING_STATUS("Nesting Status");
+  	
+  	String label;
+  	private COLUMN(String label){
+  		this.label = label
+  	}
+  	
+  	public String getLabel(){return label;}
+  }
+
+  public static String getHeader(){
+  	StringBuilder builder = new StringBuilder()
+  	for(COLUMN col : COLUMN.values()){
+  		builder.append(col.getLabel()).append(",")
+  	}
+  	return builder.toString()
+  }
+
+  Long id
+  String month
+  String day
+  String year
+  SurveyType surveyType = SurveyType.NIGHT
+  String district
+  File file
+  String forest
+  String observer1
+  String observer2
+  String observer3
+  String range
+  String result
+  String pacName
+  String pacNumber
+  String areaCovered
+  String quadMapName
+  String monitorType
+  String sunriseTime
+  String sunsetTime
+  String surveyNumber
+  String outingNumber
+  String surveyStartTime
+  String surveyEndTime
+  String surveyTotalTime
+  String moon
+  String moonPhase
+  String hikeInStartTime
+  String hikeInEndTime
+  String hikeInTotalTime
+  String hikeOutStartTime
+  String hikeOutEndTime
+  String hikeOutTotalTime
+  String miceUsed
+  String nestingStatus
+  String predawn
+  String aborted
+  String completed
+  List details = new ArrayList()
+
+  public OwlData(File file, Long id){
+    this.file = file
+	this.id = id
+  }
+
+  public String fileNameNoExtension(){
+    if(file == null){
+      return ""
+    }
+    return file.getName().substring(0, file.getName().lastIndexOf("."))
+  }
+  
+  public String fileName() {
+	  return fileNameNoExtension()
+  }
+  
+  public String add(val1, val2) {
+	  def num1
+	  def num2
+	  if(isFloat(val1)) {
+		  num1 = Float.parseFloat(val1)
+	  }
+	  if(isFloat(val2)) {
+		  num2 = Float.parseFloat(val2)
+	  }
+	  
+	  if(num1 != null && num2 != null) {
+		  return "" + (num1 + num2)
+	  }
+	  
+	  return concat(val1, val2, " + ")
+  }
+  
+  String concat(val1, val2, delimiter) {
+	  if(val1 == null && val2 == null) {
+		  return ""
+	  }
+	  if(val1 != null && !val1.equals("") && val2 != null && !val2.equals("")) {
+		  return val1 + delimiter + val2
+	  }
+	  return val1 != null ? val1 : val2
+  }
+  
+  boolean isFloat(value) {
+	  if(value == null) {
+		  return false
+	  }
+	  try {
+		  Float.parseFloat(value)
+		  return true
+	  }catch(NumberFormatException e) {
+	  	return false
+	  }
+  }
+  
+  public String toString() {
+	  if(!details.isEmpty()) {
+		  def builder = new StringBuilder()
+		  for(int i=0; i<details.size(); i++) {
+			  def detail = details.get(i)
+			  builder.append(toString(detail))
+			  if(i < details.size() - 1) {
+				  builder.append("\r\n")
+			  }
+		  }
+		  return builder.toString()
+	  }
+	  return toString(null)
+  }
+
+  public String lesserValue(val1, val2) {
+      if (isNumber(val1) && isNumber(val2)) {
+          def num1 = Integer.parseInt(val1)
+          def num2 = Integer.parseInt(val2)
+          return num1 < num2 ? val1 : val2
+      }
+      return val1 //assume the first is lower
+  }
+
+  public String greaterValue(val1, val2) {
+      if (isNumber(val1) && isNumber(val2)) {
+          def num1 = Integer.parseInt(val1)
+          def num2 = Integer.parseInt(val2)
+          return num1 > num2 ? val1 : val2
+      }
+      return val2 //assume the second is higher
+  }
+
+    boolean isNumber(value){
+        try{
+            Integer.parseInt(String.valueOf(value))
+            return true
+        }catch (NumberFormatException e){
+            return false
+        }
+    }
+  
+  public String toString(detailData){
+	//if the detailData is null, create a new one (all field values will be null/empty)
+	if(detailData == null) {
+		detailData = new DetailData()
+	}
+	  
+  	StringBuilder builder = new StringBuilder()
+  	for(COLUMN col : COLUMN.values()){
+  		switch(col){
+			case COLUMN.MICE_COUNT:
+				builder.append(quote(miceUsed))
+				break;
+			case COLUMN.NESTING_STATUS:
+				builder.append(quote(nestingStatus))
+				break;
+			case COLUMN.RECORD:
+				builder.append(quote("" + id))
+				break;
+			case COLUMN.START_TIME:
+				builder.append(quote(surveyStartTime, true))
+				break;
+			case COLUMN.END_TIME:
+				builder.append(quote(surveyEndTime, true))
+				break;
+			case COLUMN.SUNRISE:
+				builder.append(quote(sunriseTime, true))
+				break;
+			case COLUMN.SUNSET:
+				builder.append(quote(sunsetTime, true))
+				break;
+			case COLUMN.HOURS:
+				builder.append(quote(surveyTotalTime))
+				break;
+			case COLUMN.HIKE_HOURS:
+				builder.append(quote(add(hikeInTotalTime, hikeOutTotalTime)))
+				break;
+			case COLUMN.SURVEY_NUMBER:
+				builder.append(quote(surveyNumber))
+				break;
+			case COLUMN.SURVEY_OUT:
+				builder.append(quote(outingNumber))
+				break;
+			case COLUMN.SURVEY_TYPE:
+				builder.append(quote(surveyType.getText()))
+				break;
+            case COLUMN.PREDAWN:
+                builder.append(quote(predawn))
+                break;
+            case COLUMN.ABORT:
+                builder.append(quote(aborted))
+                break;
+            case COLUMN.COMPL:
+                builder.append(quote(completed))
+                break;
+  			case COLUMN.OBSERVER_ONE:
+  				builder.append(quote(observer1))
+  				break;
+  			case COLUMN.OBSERVER_TWO:
+  				builder.append(quote(observer2))
+  				break;
+  			case COLUMN.OBSERVER_THREE:
+  				builder.append(quote(observer3))
+  				break;
+  			case COLUMN.FILENAME:
+  				builder.append(quote(fileNameNoExtension()))
+  				break;
+  			case COLUMN.QUADRANT:
+  				builder.append(quote(quadMapName))
+  				break;
+  			case COLUMN.MONITOR_TYPE:
+  				builder.append(quote(monitorType))
+  				break;
+  			case COLUMN.SURVEY_PERCENT:
+  				builder.append(quote(areaCovered))
+  				break;
+  			case COLUMN.PAC_NAME:
+  				builder.append(quote(pacName))
+  				break;
+  			case COLUMN.PAC_NUMBER:
+  				builder.append(quote(pacNumber, true))
+  				break;
+  			case COLUMN.MONTH:
+  				builder.append(quote(month))
+  				break;
+  			case COLUMN.DAY:
+  				builder.append(quote(day))
+  				break;
+  			case COLUMN.YEAR:
+  				builder.append(quote(year))
+  				break;
+  			case COLUMN.DISTRICT:
+  				builder.append(quote(district))
+  				break;
+  			case COLUMN.FOREST:
+  				builder.append(quote(forest))
+  				break;
+  			case COLUMN.RANGE:
+  				builder.append(quote(range))
+  				break;
+  			case COLUMN.OBSERVER_ONE:
+  				builder.append(quote(observers))
+  				break;
+  			case COLUMN.RESULTS:
+  				builder.append(quote(result))
+  				break;
+			
+			//From DetailData object--------------------------------------------------------------------------
+			case COLUMN.ROUTE_ID:
+				builder.append(quote(detailData.routeNumber))
+				break;
+			case COLUMN.METHOD:
+				builder.append(quote(detailData.method))
+				break;
+			case COLUMN.CALL_METHOD:
+				builder.append(quote(detailData.callMethod))
+				break;
+			case COLUMN.ROUTE_START_TIME:
+				builder.append(quote(detailData.start, true))
+				break;
+			case COLUMN.ROUTE_END_TIME:
+				builder.append(quote(detailData.end, true))
+				break;
+			case COLUMN.ROUTE_TOTAL:
+				builder.append(quote(detailData.total))
+				break;
+			case COLUMN.MOON:
+                builder.append(quote(detailData.moon))
+                break;
+            case COLUMN.MOON_PHASE:
+                builder.append(quote(moonPhase, true))
+                break;
+			case COLUMN.WIND_MIN:
+				builder.append(quote(detailData.getMinWindString()))
+				break;
+			case COLUMN.WIND_MAX:
+				builder.append(quote(detailData.getMaxWindString()))
+				break;
+			case COLUMN.TEMP_MIN:
+				String min = detailData.temp
+				if(min != null && min.contains("-")) {
+					min = min.replace("--", "-")
+					if(min.split("-").size() > 0) {
+						def val1 = min.split("-")[0]
+                        def val2 = min.split("-")[1]
+                        min = lesserValue(val1, val2)
+					}
+				}
+				builder.append(quote(min))
+				break;
+			case COLUMN.TEMP_MAX:
+				String max = detailData.temp
+				if(max != null && max.contains("-")) {
+					max = max.replace("--", "-")
+					if(max.split("-").size() > 1) {
+                        def val1 = max.split("-")[0]
+                        def val2 = max.split("-")[1]
+                        max = greaterValue(val1, val2)
+					}
+				}
+				builder.append(quote(max))
+				break;
+			case COLUMN.CC_PERCENT:
+				builder.append(quote(detailData.cloud))
+				break;
+			case COLUMN.PPT:
+				builder.append(quote(detailData.water))
+				break;
+			case COLUMN.OBS_TYPE:
+				builder.append(quote(detailData.obsType))
+				break;
+			case COLUMN.SEX:
+				builder.append(quote(detailData.sex))
+				break;
+			case COLUMN.AGE:
+				builder.append(quote(detailData.age))
+				break;
+			case COLUMN.SPP:
+				builder.append(quote(detailData.species))
+				break;
+			case COLUMN.RESPONSE_TIME:
+				builder.append(quote(detailData.time, true))
+				break;
+			case COLUMN.BEARING:
+				builder.append(quote(detailData.bearing))
+				break;
+			case COLUMN.DISTANCE:
+				builder.append(quote(detailData.distance))
+				break;
+			case COLUMN.UTM_EAST:
+				builder.append(quote(detailData.utmE))
+				break;
+			case COLUMN.UTM_NORTH:
+				builder.append(quote(detailData.utmN))
+				break;
+			//End DetailData object---------------------------------------------------------------------------
+				   
+				  
+			//default meaning the code isn't parsing this value yet
+  			default:
+  				builder.append(quote(null))
+  				break;
+  		}
+  		builder.append(comma())
+  	}
+  	return builder.toString()
+  }
+
+  String comma(){
+    return ","
+  }
+  
+  String quote(text) {
+	  return quote(text, false)
+  }
+
+  String quote(text, preventFormat){
+    if(text == null){
+      text = ""
+    }
+    text = text.replace("\"", "")
+	if(preventFormat) {
+		text = preventExcelFormatting(text)
+	}
+    return "\"" + text + "\""
+  }
+  
+  String preventExcelFormatting(text) {
+	  if(text == null || text.trim().isEmpty()) {
+		  return ""
+	  }
+	  return "'" + text
+  }
+  
+  //setters to prevent data from being overwritten
+  public void setQuadMapName(String value) {
+  	if(this.quadMapName == null || this.quadMapName.isEmpty()) {
+  		this.quadMapName = value
+  	}
+  }
+  
+  public void setResult(String value) {
+  	if(this.result == null || this.result.isEmpty()){
+  		this.result = value
+  	}
+  }
+  
+  public void setSunriseTime(String value) {
+  	if(this.sunriseTime == null || this.sunriseTime.isEmpty()){
+  		this.sunriseTime = value
+  	}
+  }
+  
+  public void setSunsetTime(String value) {
+  	if(this.sunsetTime == null || this.sunsetTime.isEmpty()){
+  		this.sunsetTime = value
+  	}
+  }
+
+  public void setMoonPhase(String value) {
+    this.moonPhase = value
+  }
+
+}
+
+class DetailData {
+	String routeNumber
+	String method
+	String callMethod
+	String start
+	String end
+	String total
+	String moon
+	String wind
+	protected Integer minWind
+	protected Integer maxWind
+	String cloud
+	String water
+	String temp
+	String obsType
+	String sex
+	String age
+	String species
+	String time
+	String bearing
+	String distance
+	String utmE
+	String utmN
+	
+	public DetailData() {}
+	
+	//Copy constructor for weather fields (add all fields if needed)
+	public DetailData(DetailData detailData) {
+		if(detailData != null) {
+			println("Copying existing DetailData")
+			this.wind = detailData.wind
+			this.minWind = detailData.minWind
+			this.maxWind = detailData.maxWind
+			this.cloud = detailData.cloud
+			this.water = detailData.water
+			this.temp = detailData.temp
+		}
+	}
+
+	public void setWind(String wind) {
+		this.wind = wind
+		String value = wind
+		if(value != null && value.contains("-")) {
+			value = value.replace("?", "--")
+			value = value.replace("--", "-")
+			if(value.split("-").size() > 0) {
+				def first = value.split("-")[0]
+				if(isNumber(first)){
+					Integer firstInt = Integer.valueOf(first)
+					//the wind could be stronger at the begin or end of survey, let setter take care of it
+					setMinWind(firstInt)
+					setMaxWind(firstInt)
+				}
+				
+				def second = value.split("-")[1]
+				if(isNumber(second)){
+					Integer secondInt = Integer.valueOf(second)
+					//the wind could be stronger at the begin or end of survey, let setter take care of it
+					setMinWind(secondInt)
+					setMaxWind(secondInt)
+				}
+			}
+		}
+	}
+	
+	public void setMinWind(Integer value){
+		if(minWind == null || (value.intValue() < minWind.intValue())){
+			println("Setting min wind: " + value + " current: " + minWind + " wind: " + wind)
+			minWind = value
+		}
+	}
+	
+	public void setMaxWind(Integer value){
+		if(maxWind == null || (value.intValue() > maxWind.intValue())){
+			println("Setting max wind: " + value + " current: " + maxWind + " wind: " + wind)
+			maxWind = value
+		}
+	}
+	
+	public String getMinWindString(){
+		if(minWind != null){
+			return minWind.toString()
+		}
+		return wind
+	}
+	
+	public String getMaxWindString(){
+		if(maxWind != null){
+			return maxWind.toString()
+		}
+		return wind
+	}
+	
+	boolean isNumber(value){
+		try{
+			Integer.parseInt(String.valueOf(value))
+			return true
+		}catch (NumberFormatException e){
+			return false
+		}
+	}
+}
+
+/**
+ * A class to keep track of data to be printed to the usfs output file.
+ */
+public class USFSData {
+   SurveyType surveyType
+   String pacName
+   String pacNumber
+   List callPoints = new ArrayList()
+
+  public static String getHeader() {
+    def builder = new StringBuilder()
+    builder.append("PAC Name")
+    builder.append(",")
+    builder.append("PAC Number")
+    builder.append(",")
+    builder.append("Call Point Name")
+    builder.append(",")
+    builder.append("utmE")
+    builder.append(",")
+    builder.append("utmN")
+    builder.append("\r\n")
+    return builder.toString()
+  }
+
+  public boolean isNightSurvey() {
+    return surveyType == SurveyType.NIGHT
+  }
+
+  public void addCallPoint(String name, String utmE, String utmN) {
+    def callPoint = new USFSCallPoint()
+    callPoint.name = name
+    callPoint.utmE = utmE
+    callPoint.utmN = utmN
+    callPoints.add(callPoint)
+  }
+
+  public String toString() {
+    def builder = new StringBuilder()
+    if(callPoints.isEmpty()) {
+      appendBaseData(builder)
+      builder.append("\r\n")
+    }else{
+      //the data must be right aligned in Word which causes it to be backwards when converted to txt
+      callPoints.reverseEach{
+        appendBaseData(builder)
+        builder.append(comma())
+        builder.append(quote(it.name))
+        builder.append(comma())
+        builder.append(quote(it.utmE))
+        builder.append(comma())
+        builder.append(quote(it.utmN))
+        builder.append("\r\n")
+      }
+    }
+    return builder.toString()
+  }
+
+  protected void appendBaseData(builder) {
+    builder.append(quote(pacName))
+    builder.append(comma())
+    builder.append(quote(pacNumber))
+  }
+
+  String comma(){
+    return ","
+  }
+
+  String quote(text) {
+      return quote(text, false)
+  }
+
+  String quote(text, preventFormat){
+    if(text == null){
+      text = ""
+    }
+    text = text.replace("\"", "")
+    if(preventFormat) {
+        text = preventExcelFormatting(text)
+    }
+    return "\"" + text + "\""
+  }
+
+  String preventExcelFormatting(text) {
+      if(text == null || text.trim().isEmpty()) {
+          return ""
+      }
+      return "'" + text
+  }
+
+}
+
+public class USFSCallPoint {
+  String name
+  String utmE
+  String utmN
+}
