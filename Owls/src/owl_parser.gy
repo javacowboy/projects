@@ -5,7 +5,7 @@ import java.text.ParseException
 
 //vars
 INPUT_DIR="../input" //my computer
-INPUT_DIR="C:/Users/Owner/Dropbox/2013 MT GRAHAM MSO not for USFS/test conversion files" //amanda's computer
+//INPUT_DIR="C:/Users/Owner/Dropbox/2013 MT GRAHAM MSO not for USFS/test conversion files" //amanda's computer
 
 OUTPUT_DIR="./"
 OUTPUT_FILE=OUTPUT_DIR + "output.csv"
@@ -664,7 +664,7 @@ String parseFor(keyword, line){
 	  //println(parts)
 	  println("Searching for: " + keyword.getText() + " in -- " + line)
 	  for(String part : parts){
-		 if(Keyword.isAKeyword(part)){
+		 if(Keyword.isAKeyword(keyword, part)){
 		   println("Stopping search at keyword: " + part)
 		   break
 		 }else {
@@ -964,7 +964,7 @@ enum Keyword {
     return text
   }
 
-  public static boolean isAKeyword(text){
+  public static boolean isAKeyword(keyword, text){
     for(Keyword key : Keyword.values()){
       if(key.getText().equals(text)){
         return true
@@ -972,6 +972,12 @@ enum Keyword {
       //kind of a hack for multi word keywords
       def parts = key.getText().split(" ")
       if(parts.size() > 1){
+	    //before we do the multi word keyword logic, check if value contains keys from the current keyword being searched.
+	    // Example: PAC Name and Number: PAC 0505006 BEAR WALLOW
+	    // In this case PAC is a keyword, but it's also found in the PAC value.  Allow this.
+        if(keyword.getText().startsWith(parts[0])) {
+        	continue;
+        }
         for(String part : parts){
           //don't compare common words
           if(!part.equals("and") && !part.equals("of") && !part.equals("one") && !part.equalsIgnoreCase("N")){
