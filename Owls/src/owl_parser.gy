@@ -452,7 +452,7 @@ void splitPacData(value, owlData, usfsData){
         usfsData.pacNumber = number
 	}
 	//one worker puts the pac number in parens ().  remove the parens and the number from the name
-	owlData.pacName = value.replace(number, "").replace("()", "").trim()
+	owlData.pacName = value.replace(number, "").replace("()", "").replace("PAC", "").trim()
     usfsData.pacName = owlData.pacName
 }
 
