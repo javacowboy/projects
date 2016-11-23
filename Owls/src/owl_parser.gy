@@ -998,7 +998,8 @@ class OwlData {
   public enum COLUMN {
   	FILENAME("Orig File"),
   	RECORD("Record"),
-  	AREA("Study Area"),
+  	//Study area, Project Objective, and Nesting Status 
+  	//AREA("Study Area"),
   	FOREST("NF Name"),
   	DISTRICT("RD Name"),
   	PAC_NAME("PAC Name"),
@@ -1011,7 +1012,7 @@ class OwlData {
   	MONTH("Month"),
   	DAY("Day"),
   	YEAR("Year"),
-  	OBJECTIVE("Prog. Objc"),
+  	//OBJECTIVE("Prog. Objc"),
   	SURVEY_TYPE("Survey Type"),
   	SURVEY_NUMBER("Survey No."),
   	SURVEY_OUT("Survey Out."),
@@ -1051,8 +1052,8 @@ class OwlData {
   	DISTANCE("Distance"),
   	UTM_EAST("UTM E"),
   	UTM_NORTH("UTM N"),
-  	MICE_COUNT("Mice Used"),
-  	NESTING_STATUS("Nesting Status");
+  	MICE_COUNT("Mice Used");
+  	//NESTING_STATUS("Nesting Status")
   	
   	String label;
   	private COLUMN(String label){
@@ -1219,9 +1220,9 @@ class OwlData {
 			case COLUMN.MICE_COUNT:
 				builder.append(quote(miceUsed))
 				break;
-			case COLUMN.NESTING_STATUS:
-				builder.append(quote(nestingStatus))
-				break;
+			//case COLUMN.NESTING_STATUS:
+				//builder.append(quote(nestingStatus))
+				//break;
 			case COLUMN.RECORD:
 				builder.append(quote("" + id))
 				break;
