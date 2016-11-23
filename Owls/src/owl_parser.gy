@@ -5,7 +5,7 @@ import java.text.ParseException
 
 //vars
 INPUT_DIR="../input" //my computer
-//INPUT_DIR="C:/Users/Owner/Dropbox/2013 MT GRAHAM MSO not for USFS/test conversion files" //amanda's computer
+INPUT_DIR="C:/Users/Owner/Dropbox/2013 MT GRAHAM MSO not for USFS/test conversion files" //amanda's computer
 
 OUTPUT_DIR="./"
 OUTPUT_FILE=OUTPUT_DIR + "output.csv"
