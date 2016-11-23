@@ -1052,6 +1052,9 @@ class OwlData {
   	DISTANCE("Distance"),
   	UTM_EAST("UTM E"),
   	UTM_NORTH("UTM N"),
+  	UTM_ZONE("UTM ZONE"),
+  	POSITION("Position"),
+  	NAME("Name"),
   	MICE_COUNT("Mice Used");
   	//NESTING_STATUS("Nesting Status")
   	
