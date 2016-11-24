@@ -26,7 +26,8 @@ searchLineNumber = 0
 
 /*
 currentRecordNum represents one survey.  One survey can result in multiple output lines.  Use this like a primary key for the parent info.
-LineNumber.CURRENT represents how many output lines we've created and is incremented each time we write a line out.
+LineNumber.ACTUAL represents how many output lines we've created and is incremented each time we write a line out.
+LineNumber.CURRENT can start at any number and then increments each time we write a line out.
 */
 //record number is an auto primary key controlled outside this code
 currentRecordNum = null
@@ -1000,7 +1001,13 @@ enum Keyword {
 
 //Tracks how many lines we're writing out.  
 class LineNumber {
+	static int ACTUAL = 1;
 	static int CURRENT = 0;
+	
+	static void increment() {
+		ACTUAL++;
+		CURRENT++;
+	}
 }
 
 class OwlData {
@@ -1009,7 +1016,6 @@ class OwlData {
   public enum COLUMN {
   	FILENAME("Orig File"),
   	RECORD("Record"),
-  	//Study area, Project Objective, and Nesting Status 
   	//AREA("Study Area"),
   	FOREST("NF Name"),
   	DISTRICT("RD Name"),
@@ -1075,6 +1081,27 @@ class OwlData {
   	}
   	
   	public String getLabel(){return label;}
+  	
+  	//Excel column header labels
+  	public String toExcelColumnLabel() {
+  		int upperCaseLetterA = 65;
+  		int oneBasedColumnNumber = this.ordinal() + 1
+  		StringBuilder builder = new StringBuilder();
+  		while(oneBasedColumnNumber > 0) {
+  			oneBasedColumnNumber--
+  			builder.append((char)(upperCaseLetterA + oneBasedColumnNumber % 26))
+  			oneBasedColumnNumber /= 26
+  		}
+  		return builder.reverse().toString()
+  		
+		//String label = "";
+	    //while (oneBasedColumnNumber > 0) {
+	    //	oneBasedColumnNumber--;
+	    //    label = (char)('A' + oneBasedColumnNumber % 26) + label;
+	    //    oneBasedColumnNumber /= 26;
+	    //}
+	    //return label;
+	}
   }
 
   public static String getHeader(){
@@ -1221,6 +1248,35 @@ class OwlData {
             return false
         }
     }
+    
+    /*
+    	For the generated values below, we'd normally have to add 1 to LineNumber.ACTUAL because we have a header row in the csv file.
+    	But these column values are generated after the "Record" column is created (which increments LineNumber.ACTUAL)
+    */
+    public String getNameEquation() {
+    	//=AV2&"-"&AT2&"-"&AU2&"-"&AS2&"-"&B2
+    	return  "=" +
+    			COLUMN.SPP.toExcelColumnLabel() + LineNumber.ACTUAL + "&" +
+    			quote("-") + "&" +
+    			COLUMN.SEX.toExcelColumnLabel() + LineNumber.ACTUAL + "&" +
+    			quote("-") + "&" +
+    			COLUMN.AGE.toExcelColumnLabel() + LineNumber.ACTUAL + "&" +
+    			quote("-") + "&" +
+    			COLUMN.OBS_TYPE.toExcelColumnLabel() + LineNumber.ACTUAL + "&" +
+    			quote("-") + "&" +
+    			COLUMN.RECORD.toExcelColumnLabel() + LineNumber.ACTUAL;
+    }
+    
+    public String getPositionEquation() {
+    	//=BB2&" "&AZ2&"mE"&" "&BA2&"mN"
+    	return "=" + 
+    			COLUMN.UTM_ZONE.toExcelColumnLabel() + LineNumber.ACTUAL + "&" +
+    			quote(" ") + "&" +
+    			COLUMN.UTM_EAST.toExcelColumnLabel() + LineNumber.ACTUAL + "&" +
+    			quote("mE") + "&" + quote(" ") + "&" +
+    			COLUMN.UTM_NORTH.toExcelColumnLabel() + LineNumber.ACTUAL + "&" +
+    			quote("mN");
+    }
   
   public String toString(detailData){
 	//if the detailData is null, create a new one (all field values will be null/empty)
@@ -1239,7 +1295,8 @@ class OwlData {
 				//break;
 			case COLUMN.RECORD:
 				//builder.append(quote("" + id))
-				builder.append(quote("" + LineNumber.CURRENT++))
+				builder.append(quote("" + LineNumber.CURRENT))
+				LineNumber.increment()
 				break;
 			case COLUMN.START_TIME:
 				builder.append(quote(surveyStartTime, true))
@@ -1419,6 +1476,14 @@ class OwlData {
 				break;
 			//End DetailData object---------------------------------------------------------------------------
 				   
+			//Generated Values--------------------------------------------------------------------------------
+			case COLUMN.NAME:
+				builder.append(escapeQuote(getNameEquation()))
+				break;
+			case COLUMN.POSITION:
+				builder.append(escapeQuote(getPositionEquation()))
+				break;
+			//End Generated Values----------------------------------------------------------------------------
 				  
 			//default meaning the code isn't parsing this value yet
   			default:
@@ -1437,7 +1502,15 @@ class OwlData {
   String quote(text) {
 	  return quote(text, false)
   }
+  
+  //This method escapes any quotes in the field value
+  String escapeQuote(text) {
+  	text = text.replace("\"", "\"\"")
+  	return "\"" + text + "\""
+  }
+  
 
+  //This method removes any quotes in the field value
   String quote(text, preventFormat){
     if(text == null){
       text = ""
