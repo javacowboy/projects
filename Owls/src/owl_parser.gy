@@ -24,6 +24,10 @@ surveyType = null
 searchTimeType = null
 searchLineNumber = 0
 
+/*
+currentRecordNum represents one survey.  One survey can result in multiple output lines.  Use this like a primary key for the parent info.
+LineNumber.CURRENT represents how many output lines we've created and is incremented each time we write a line out.
+*/
 //record number is an auto primary key controlled outside this code
 currentRecordNum = null
 
@@ -34,6 +38,7 @@ includeAbortedFiles = null
 if(args.size() > 0) {
 	if(isNumber(args[0])){
 		currentRecordNum = Long.parseLong(args[0])
+		LineNumber.CURRENT = currentRecordNum
 	}
 	if(args.size() == 2){
 		includeAbortedFiles = args[1].toLowerCase().startsWith("n") ? false : true
@@ -65,6 +70,7 @@ void promptForRecordNumber() {
 		input = it.readLine()
 		if(isNumber(input)) {
 			currentRecordNum = Long.parseLong(input)
+			LineNumber.CURRENT = currentRecordNum
 		}else {
 			println("Not a valid number.")
 		}
@@ -992,6 +998,11 @@ enum Keyword {
   }
 }
 
+//Tracks how many lines we're writing out.  
+class LineNumber {
+	static int CURRENT = 0;
+}
+
 class OwlData {
 
   //an enum to keep track of the order to export the data
@@ -1227,7 +1238,8 @@ class OwlData {
 				//builder.append(quote(nestingStatus))
 				//break;
 			case COLUMN.RECORD:
-				builder.append(quote("" + id))
+				//builder.append(quote("" + id))
+				builder.append(quote("" + LineNumber.CURRENT++))
 				break;
 			case COLUMN.START_TIME:
 				builder.append(quote(surveyStartTime, true))
