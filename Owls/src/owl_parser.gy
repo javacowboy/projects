@@ -997,7 +997,7 @@ enum GoogleEarthColumn {
 	ICON("Icon"),
 	ICON_COLOR("IconColor"),
 	ICON_SCALE("IconScale"),
-	LABEL_COLOR("Label Color");
+	LABEL_COLOR("LabelColor");
 	
 	private String column;
 	private GoogleEarthColumn(String column) {
