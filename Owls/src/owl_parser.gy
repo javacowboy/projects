@@ -50,7 +50,7 @@ if(args.size() > 0) {
 		currentRecordNum = Long.parseLong(args[0])
 		LineNumber.CURRENT = currentRecordNum
 	}
-	if(args.size() == 2){
+	if(args.size() > 2){
 		includeAbortedFiles = args[1].toLowerCase().startsWith("n") ? false : true
 	}
 	if(args.size() == 3) {
@@ -295,7 +295,7 @@ void appendToEarthFiles(owlData) {
 		//at this point, LineNumber.CURRENT has already been incremented to the end of all details.  Calculate the line number.
 		int lineNumber = owlData.startingLineNumber
 		for(detail in owlData.details) {
-			if(detail.species && detail.species.toUpperCase().equals("STOC")) {
+			if(detail.species && detail.species.toUpperCase().equals("STOC") && isNumber(detail.utmE)) {
 				if(detail.obsType && detail.obsType.toUpperCase().equals("NEST")) {
 //					println("EARTH NEST FILE")
 					appendToFile(EARTH_NESTS_FILE, detail.toEarthString(lineNumber) + GoogleEarthValue.NEST.toString(), true)
