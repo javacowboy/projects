@@ -195,7 +195,7 @@ void handleFile(file){
 	if(includeFile(file)) {
 		println("Processing file: " + file.getName())
 		reset()
-		owlData = new OwlData(file, currentRecordNum)
+		owlData = new OwlData(file, currentRecordNum, LineNumber.CURRENT)
         usfsData = new USFSData()
 		file.eachLine{ line ->
 			parseLine(line, owlData, usfsData)
@@ -292,27 +292,30 @@ void appendToEarthFiles(owlData) {
 	 * 
 	 */
 	if(owlData.details != null) {
+		//at this point, LineNumber.CURRENT has already been incremented to the end of all details.  Calculate the line number.
+		int lineNumber = owlData.startingLineNumber
 		for(detail in owlData.details) {
 			if(detail.species && detail.species.toUpperCase().equals("STOC")) {
 				if(detail.obsType && detail.obsType.toUpperCase().equals("NEST")) {
 //					println("EARTH NEST FILE")
-					appendToFile(EARTH_NESTS_FILE, detail.toEarthString(), true)
+					appendToFile(EARTH_NESTS_FILE, detail.toEarthString(lineNumber), true)
 				}else if(detail.sex && detail.sex.toUpperCase().equals("M")) {
 //					println("EARTH MALE FILE")
-					appendToFile(EARTH_MALES_FILE, detail.toEarthString(), true)
+					appendToFile(EARTH_MALES_FILE, detail.toEarthString(lineNumber), true)
 				}else if(detail.sex && detail.sex.toUpperCase().equals("F")) {
 //					println("EARTH FEMALE FILE")
-					appendToFile(EARTH_FEMALES_FILE, detail.toEarthString(), true)
+					appendToFile(EARTH_FEMALES_FILE, detail.toEarthString(lineNumber), true)
 				}else if(detail.sex && detail.sex.toUpperCase().equals("U")) {
 					if(detail.age && (detail.age.toUpperCase().equals("H") || detail.age.toUpperCase().equals("Y"))) {
 //						println("EARTH YOUNG FILE")
-						appendToFile(EARTH_YOUNG_FILE, detail.toEarthString(), true)
+						appendToFile(EARTH_YOUNG_FILE, detail.toEarthString(lineNumber), true)
 					}else {
 //						println("EARTH UNKNOWN FILE")
-						appendToFile(EARTH_UNKNOWN_FILE, detail.toEarthString(), true)
+						appendToFile(EARTH_UNKNOWN_FILE, detail.toEarthString(lineNumber), true)
 					}
 				}
 			}
+			lineNumber++
 		}
 	}
 }
@@ -1225,11 +1228,13 @@ class OwlData {
   String predawn
   String aborted
   String completed
+  Integer startingLineNumber
   List details = new ArrayList()
 
-  public OwlData(File file, Long id){
+  public OwlData(File file, Long id, Integer lineNumber){
     this.file = file
 	this.id = id
+	this.startingLineNumber = lineNumber
   }
 
   public String fileNameNoExtension(){
@@ -1741,11 +1746,11 @@ class DetailData {
 		}
 	}
 	
-	String toEarthString() {
+	String toEarthString(lineNumber) {
 		StringBuilder builder = new StringBuilder()
 		String value = utmZone + " " + utmE + "mE " + utmN + "mN"
 		builder.append(OwlData.quote(value)).append(OwlData.comma())
-		value = species + "-" + sex + "-" + age + "-" + obsType + "-" + LineNumber.ACTUAL
+		value = species + "-" + sex + "-" + age + "-" + obsType + "-" + lineNumber
 		builder.append(OwlData.quote(value)).append(OwlData.comma())
 		return builder.toString()
 	}
