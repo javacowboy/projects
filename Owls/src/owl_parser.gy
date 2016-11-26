@@ -128,11 +128,11 @@ void execute() {
 	clean()
 	appendToOutputFile(OwlData.getHeader(), false)
     appendToUsfsFile(USFSData.getHeader(), false)
-	appendToFile(EARTH_MALES_FILE, OwlData.getEarthHeader(), false)
-	appendToFile(EARTH_FEMALES_FILE, OwlData.getEarthHeader(), false)
-	appendToFile(EARTH_NESTS_FILE, OwlData.getEarthHeader(), false)
-	appendToFile(EARTH_YOUNG_FILE, OwlData.getEarthHeader(), false)
-	appendToFile(EARTH_UNKNOWN_FILE, OwlData.getEarthHeader(), false)
+	appendToFile(EARTH_MALES_FILE, OwlData.getEarthHeader() + GoogleEarthColumn.getHeader(), false)
+	appendToFile(EARTH_FEMALES_FILE, OwlData.getEarthHeader() + GoogleEarthColumn.getHeader(), false)
+	appendToFile(EARTH_NESTS_FILE, OwlData.getEarthHeader() + GoogleEarthColumn.getHeader(), false)
+	appendToFile(EARTH_YOUNG_FILE, OwlData.getEarthHeader() + GoogleEarthColumn.getHeader(), false)
+	appendToFile(EARTH_UNKNOWN_FILE, OwlData.getEarthHeader() + GoogleEarthColumn.getHeader(), false)
 	println("Searching directory: " + INPUT_DIR)
 	handlePath(new File(INPUT_DIR))
 }
@@ -298,20 +298,20 @@ void appendToEarthFiles(owlData) {
 			if(detail.species && detail.species.toUpperCase().equals("STOC")) {
 				if(detail.obsType && detail.obsType.toUpperCase().equals("NEST")) {
 //					println("EARTH NEST FILE")
-					appendToFile(EARTH_NESTS_FILE, detail.toEarthString(lineNumber), true)
+					appendToFile(EARTH_NESTS_FILE, detail.toEarthString(lineNumber) + GoogleEarthValue.NEST.toString(), true)
 				}else if(detail.sex && detail.sex.toUpperCase().equals("M")) {
 //					println("EARTH MALE FILE")
-					appendToFile(EARTH_MALES_FILE, detail.toEarthString(lineNumber), true)
+					appendToFile(EARTH_MALES_FILE, detail.toEarthString(lineNumber) + GoogleEarthValue.MALE.toString(), true)
 				}else if(detail.sex && detail.sex.toUpperCase().equals("F")) {
 //					println("EARTH FEMALE FILE")
-					appendToFile(EARTH_FEMALES_FILE, detail.toEarthString(lineNumber), true)
+					appendToFile(EARTH_FEMALES_FILE, detail.toEarthString(lineNumber) + GoogleEarthValue.FEMALE.toString(), true)
 				}else if(detail.sex && detail.sex.toUpperCase().equals("U")) {
 					if(detail.age && (detail.age.toUpperCase().equals("H") || detail.age.toUpperCase().equals("Y"))) {
 //						println("EARTH YOUNG FILE")
-						appendToFile(EARTH_YOUNG_FILE, detail.toEarthString(lineNumber), true)
+						appendToFile(EARTH_YOUNG_FILE, detail.toEarthString(lineNumber) + GoogleEarthValue.YOUNG.toString(), true)
 					}else {
 //						println("EARTH UNKNOWN FILE")
-						appendToFile(EARTH_UNKNOWN_FILE, detail.toEarthString(lineNumber), true)
+						appendToFile(EARTH_UNKNOWN_FILE, detail.toEarthString(lineNumber) + GoogleEarthValue.UNKNOWN.toString(), true)
 					}
 				}
 			}
@@ -993,6 +993,58 @@ void handleNightData(line, owlData, detailData) {
 //end parser methods ------------------------------------------------------------------------------------------------
 
 //classes -----------------------------------------------------------------------------------------------------------
+enum GoogleEarthColumn {
+	ICON("Icon"),
+	ICON_COLOR("IconColor"),
+	ICON_SCALE("IconScale"),
+	LABEL_COLOR("Label Color");
+	
+	private String column;
+	private GoogleEarthColumn(String column) {
+		this.column = column;
+	}
+	
+	public String getLabel() {
+		return column
+	}
+	
+	public static String getHeader() {
+		StringBuilder builder = new StringBuilder()
+		for(col in values()) {
+			builder.append(col.getLabel()).append(",")
+		}
+		return builder.toString();
+	}
+}
+
+enum GoogleEarthValue {
+	MALE(202, 240, 0.6, "none"),
+	FEMALE(209, 300, 0.6, "none"),
+	NEST(238, null, 1.2, "none"),
+	YOUNG(205, 20, 1.3, "none"),
+	UNKNOWN(209, 0, 0.6, "none");
+	
+	private int icon;
+	private Integer color;
+	private double scale;
+	private String label;
+	private GoogleEarthValue(int icon, Integer color, double scale, String label) {
+		this.icon = icon
+		this.color = color
+		this.scale = scale
+		this.label = label
+	}
+	
+	public String toString() {
+		StringBuilder builder = new StringBuilder()
+		builder.append(icon).append(",")
+		builder.append(color == null ? "" : color).append(",")
+		builder.append(scale).append(",")
+		builder.append(label).append(",")
+		return builder.toString()
+	}
+}
+
 enum SurveyType{
 	DAY("Daytime"),
 	NIGHT("Nighttime");
