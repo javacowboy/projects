@@ -42,6 +42,7 @@ includeAbortedFiles = null
 
 //prompt for UTM Zone
 manualUtmZone = null
+defaultUtmZone = "12S"
 
 //main----------------------------------------------------------------------------------------
 if(args.size() > 0) {
@@ -115,8 +116,8 @@ void promptForManualUtmZone() {
 	System.in.withReader{
 		println("What is the UTM Zone?")
 		input = it.readLine()
-		if(input == null) {
-			input = ""
+		if(input == null || input.isEmpty()) {
+			input = defaultUtmZone
 		}
 		manualUtmZone = input
 		checkForManualUtmZone()
@@ -293,9 +294,6 @@ void appendToEarthFiles(owlData) {
 	if(owlData.details != null) {
 		for(detail in owlData.details) {
 			if(detail.species && detail.species.toUpperCase().equals("STOC")) {
-				if(manualUtmZone != null) {
-					detail.utmZone = manualUtmZone
-				}
 				if(detail.obsType && detail.obsType.toUpperCase().equals("NEST")) {
 //					println("EARTH NEST FILE")
 					appendToFile(EARTH_NESTS_FILE, detail.toEarthString(), true)
@@ -922,6 +920,7 @@ void handleDayData(line, owlData, detailData) {
 	if(searchLineNumber == 7) {
 		detailData.utmN = line
 	}
+	detailData.utmZone = manualUtmZone
 }
 
 void handleNightData(line, owlData, detailData) {
@@ -985,6 +984,7 @@ void handleNightData(line, owlData, detailData) {
 		 if(searchLineNumber == 20) {
 			 detailData.utmN = line
 		 }
+		 detailData.utmZone = manualUtmZone
 }
 
 //end parser methods ------------------------------------------------------------------------------------------------
@@ -1548,6 +1548,9 @@ class OwlData {
 				break;
 			case COLUMN.UTM_NORTH:
 				builder.append(quote(detailData.utmN))
+				break;
+			case COLUMN.UTM_ZONE:
+				builder.append(quote(detailData.utmZone))
 				break;
 			//End DetailData object---------------------------------------------------------------------------
 				   
