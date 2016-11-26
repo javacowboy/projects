@@ -10,6 +10,11 @@ INPUT_DIR="C:/Users/Owner/Dropbox/2013 MT GRAHAM MSO not for USFS/test conversio
 OUTPUT_DIR="./"
 OUTPUT_FILE=OUTPUT_DIR + "output.csv"
 USFS_FILE=OUTPUT_DIR + "usfs.csv"
+EARTH_MALES_FILE=OUTPUT_DIR + "MSO_MALES.csv"
+EARTH_FEMALES_FILE=OUTPUT_DIR + "MSO_FEMALES.csv"
+EARTH_NESTS_FILE=OUTPUT_DIR + "MSO_NESTS.csv"
+EARTH_YOUNG_FILE=OUTPUT_DIR + "MSO_YOUNG.csv"
+EARTH_UNKNOWN_FILE=OUTPUT_DIR + "MSO_UNKNOWN.csv"
 
 //vars that need to be reset after each file
 isDateFound = false
@@ -35,6 +40,9 @@ currentRecordNum = null
 //include files with "aborted" in the name
 includeAbortedFiles = null
 
+//prompt for UTM Zone
+manualUtmZone = null
+
 //main----------------------------------------------------------------------------------------
 if(args.size() > 0) {
 	if(isNumber(args[0])){
@@ -43,6 +51,9 @@ if(args.size() > 0) {
 	}
 	if(args.size() == 2){
 		includeAbortedFiles = args[1].toLowerCase().startsWith("n") ? false : true
+	}
+	if(args.size() == 3) {
+		manualUtmZone = args[2]
 	}
 }
 checkForRecordNumber()
@@ -60,6 +71,14 @@ void checkForRecordNumber() {
 void checkForAbortedFiles() {
 	if(includeAbortedFiles == null) {
 		promptForAbortedFiles()
+	}else {
+		checkForManualUtmZone()
+	}
+}
+
+void checkForManualUtmZone() {
+	if(manualUtmZone == null) {
+		promptForManualUtmZone()
 	}else {
 		execute()
 	}
@@ -92,10 +111,27 @@ void promptForAbortedFiles() {
 	}
 }
 
+void promptForManualUtmZone() {
+	System.in.withReader{
+		println("What is the UTM Zone?")
+		input = it.readLine()
+		if(input == null) {
+			input = ""
+		}
+		manualUtmZone = input
+		checkForManualUtmZone()
+	}
+}
+
 void execute() {
 	clean()
 	appendToOutputFile(OwlData.getHeader(), false)
     appendToUsfsFile(USFSData.getHeader(), false)
+	appendToFile(EARTH_MALES_FILE, OwlData.getEarthHeader(), false)
+	appendToFile(EARTH_FEMALES_FILE, OwlData.getEarthHeader(), false)
+	appendToFile(EARTH_NESTS_FILE, OwlData.getEarthHeader(), false)
+	appendToFile(EARTH_YOUNG_FILE, OwlData.getEarthHeader(), false)
+	appendToFile(EARTH_UNKNOWN_FILE, OwlData.getEarthHeader(), false)
 	println("Searching directory: " + INPUT_DIR)
 	handlePath(new File(INPUT_DIR))
 }
@@ -167,6 +203,7 @@ void handleFile(file){
         if(usfsData.isNightSurvey()) {
           appendToUsfsFile(usfsData.toString(), false)
         }
+		appendToEarthFiles(owlData)
   		if(currentRecordNum != null ) currentRecordNum++
 	}else {
 		println("--Skipped file--: " + file.getName())
@@ -208,14 +245,21 @@ void parseLine(line, owlData, usfsData){
 }
 
 void clean(){
-	file = new File(OUTPUT_FILE)
-	if(file.exists()){
-		file.delete()
+	files = [OUTPUT_FILE, USFS_FILE, EARTH_MALES_FILE, EARTH_FEMALES_FILE, EARTH_NESTS_FILE, EARTH_YOUNG_FILE, EARTH_UNKNOWN_FILE]
+	for(filePath in files) {
+		file = new File(filePath)
+		if(file.exists()) {
+			file.delete()
+		}
 	}
-    file = new File(USFS_FILE)
-    if(file.exists()) {
-      file.delete()
-    }
+}
+
+void appendToFile(filePath, data, withBreak) {
+	file = new File(filePath)
+	if(withBreak) {
+		file.append("\r\n")
+	}
+	file.append(data)
 }
 
 void appendToOutputFile(data) {
@@ -223,23 +267,56 @@ void appendToOutputFile(data) {
 }
 
 void appendToUsfsFile(data) {
-  appendToUsfsFile(data, true)
+	appendToUsfsFile(data, true)
 }
 
 void appendToOutputFile(data, withBreak){
-	file = new File(OUTPUT_FILE)
-	if(withBreak) {
-		file.append("\r\n")
-	}
-	file.append(data)
+	appendToFile(OUTPUT_FILE, data, withBreak)
 }
 
 void appendToUsfsFile(data, withBreak){
-  file = new File(USFS_FILE)
-  if(withBreak) {
-    file.append("\r\n")
-  }
-  file.append(data)
+	appendToFile(USFS_FILE, data, withBreak)
+}
+
+void appendToEarthFiles(owlData) {
+	/*
+	 * Rules:
+	 * SPP = STOC (detailData.species)
+	 * 
+	 * if obs type == nest -> nest file (detailData.obsType)
+	 * if sex == M  -> male file (detailData.sex)
+	 * if sex == F -> female file
+	 * if sex == U and age == U,A, or S -> unknown file (detailData.age)
+	 * if sex == U and age == H or Y -> young file
+	 * 
+	 */
+	if(owlData.details != null) {
+		for(detail in owlData.details) {
+			if(detail.species && detail.species.toUpperCase().equals("STOC")) {
+				if(manualUtmZone != null) {
+					detail.utmZone = manualUtmZone
+				}
+				if(detail.obsType && detail.obsType.toUpperCase().equals("NEST")) {
+//					println("EARTH NEST FILE")
+					appendToFile(EARTH_NESTS_FILE, detail.toEarthString(), true)
+				}else if(detail.sex && detail.sex.toUpperCase().equals("M")) {
+//					println("EARTH MALE FILE")
+					appendToFile(EARTH_MALES_FILE, detail.toEarthString(), true)
+				}else if(detail.sex && detail.sex.toUpperCase().equals("F")) {
+//					println("EARTH FEMALE FILE")
+					appendToFile(EARTH_FEMALES_FILE, detail.toEarthString(), true)
+				}else if(detail.sex && detail.sex.toUpperCase().equals("U")) {
+					if(detail.age && (detail.age.toUpperCase().equals("H") || detail.age.toUpperCase().equals("Y"))) {
+//						println("EARTH YOUNG FILE")
+						appendToFile(EARTH_YOUNG_FILE, detail.toEarthString(), true)
+					}else {
+//						println("EARTH UNKNOWN FILE")
+						appendToFile(EARTH_UNKNOWN_FILE, detail.toEarthString(), true)
+					}
+				}
+			}
+		}
+	}
 }
 
 boolean isNumber(value){
@@ -1093,14 +1170,6 @@ class OwlData {
   			oneBasedColumnNumber /= 26
   		}
   		return builder.reverse().toString()
-  		
-		//String label = "";
-	    //while (oneBasedColumnNumber > 0) {
-	    //	oneBasedColumnNumber--;
-	    //    label = (char)('A' + oneBasedColumnNumber % 26) + label;
-	    //    oneBasedColumnNumber /= 26;
-	    //}
-	    //return label;
 	}
   }
 
@@ -1110,6 +1179,12 @@ class OwlData {
   		builder.append(col.getLabel()).append(",")
   	}
   	return builder.toString()
+  }
+  
+  public static String getEarthHeader() {
+	  StringBuilder builder = new StringBuilder()
+	  builder.append(COLUMN.POSITION.getLabel()).append(",")
+	  builder.append(COLUMN.NAME.getLabel()).append(",")
   }
 
   Long id
@@ -1495,11 +1570,11 @@ class OwlData {
   	return builder.toString()
   }
 
-  String comma(){
+  static String comma(){
     return ","
   }
   
-  String quote(text) {
+  static String quote(text) {
 	  return quote(text, false)
   }
   
@@ -1511,7 +1586,7 @@ class OwlData {
   
 
   //This method removes any quotes in the field value
-  String quote(text, preventFormat){
+  static String quote(text, preventFormat){
     if(text == null){
       text = ""
     }
@@ -1522,7 +1597,7 @@ class OwlData {
     return "\"" + text + "\""
   }
   
-  String preventExcelFormatting(text) {
+  static String preventExcelFormatting(text) {
 	  if(text == null || text.trim().isEmpty()) {
 		  return ""
 	  }
@@ -1583,6 +1658,7 @@ class DetailData {
 	String distance
 	String utmE
 	String utmN
+	String utmZone
 	
 	public DetailData() {}
 	
@@ -1660,6 +1736,15 @@ class DetailData {
 		}catch (NumberFormatException e){
 			return false
 		}
+	}
+	
+	String toEarthString() {
+		StringBuilder builder = new StringBuilder()
+		String value = utmZone + " " + utmE + "mE " + utmN + "mN"
+		builder.append(OwlData.quote(value)).append(OwlData.comma())
+		value = species + "-" + sex + "-" + age + "-" + obsType + "-" + LineNumber.ACTUAL
+		builder.append(OwlData.quote(value)).append(OwlData.comma())
+		return builder.toString()
 	}
 }
 
