@@ -343,6 +343,13 @@ boolean isNullOrEmpty(value) {
 	return value.trim().equals("")
 }
 
+String trim(value) {
+	if(value != null) {
+		return String.valueOf(value).trim()
+	}
+	return value
+}
+
 //Cut the remainder of the text out starting at the cutValue
 String cut(value, cutValue){
 	if(value.contains(cutValue)){
@@ -903,7 +910,7 @@ boolean isStartNightLegend(line){
 
 void handleDayData(line, owlData, detailData) {
 	if(searchLineNumber == 1) {
-		detailData.species = line
+		detailData.species = trim(line)
 	}
 	if(searchLineNumber == 2) {
 		detailData.sex = line
@@ -970,7 +977,7 @@ void handleNightData(line, owlData, detailData) {
 			 detailData.age = line
 		 }
 		 if(searchLineNumber == 15) {
-			 detailData.species = line
+			 detailData.species = trim(line)
 		 }
 		 if(searchLineNumber == 16) {
 			 detailData.time = line
