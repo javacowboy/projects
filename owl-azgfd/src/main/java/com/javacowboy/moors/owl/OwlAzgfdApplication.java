@@ -38,10 +38,10 @@ public class OwlAzgfdApplication implements CommandLineRunner {
 			List<OwlData> inData = excelReader.readSheet(inSheet);
 			List<AzgfdData> outData = dataTransform.convert(inData);
 			if(fileNumber == 1) {
-				System.out.println("Generating file: " + outSheet.getName());
+				System.out.println("Generating file with " + outData.size() + " rows of data: " + outSheet.getName());
 				excelWriter.createSheet(outSheet, outData);
 			}else {
-				System.out.println("Appending data to file: " + outSheet.getName());
+				System.out.println("Appending " + outData.size() + " rows of data to file: " + outSheet.getName());
 				excelWriter.appendToSheet(outSheet, outData);
 			}
 		}

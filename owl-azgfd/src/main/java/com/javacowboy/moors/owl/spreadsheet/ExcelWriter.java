@@ -1,12 +1,15 @@
 package com.javacowboy.moors.owl.spreadsheet;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Component;
@@ -38,8 +41,20 @@ public class ExcelWriter {
 	}
 	
 	public void appendToSheet(File outFile, List<AzgfdData> outData) {
-		// TODO Auto-generated method stub
-		
+		try {
+			FileInputStream fileInputStream = new FileInputStream(outFile);
+			Workbook workbook = new XSSFWorkbook(fileInputStream);
+			Sheet dataSheet = workbook.getSheet(SHEET_DATA);
+			int lastRow = dataSheet.getPhysicalNumberOfRows();
+			lastRow++;
+			writeData(dataSheet, outData, lastRow);
+			FileOutputStream fileOutputStream = new FileOutputStream(outFile);
+			workbook.write(fileOutputStream);
+			workbook.close();
+		} catch (IOException e) {
+			System.err.println("Error appending to file: " + outFile.getName());
+			e.printStackTrace();
+		}
 	}
 	
 	private int createHeader(XSSFSheet sheet, int rowNumber) {
@@ -52,7 +67,7 @@ public class ExcelWriter {
 		return rowNumber;
 	}
 
-	private int writeData(XSSFSheet sheet, List<AzgfdData> outData, int rowNumber) {
+	private int writeData(Sheet sheet, List<AzgfdData> outData, int rowNumber) {
 		for(AzgfdData data : outData) {
 			Row row = sheet.createRow(rowNumber++);
 			writeRow(row, data);
