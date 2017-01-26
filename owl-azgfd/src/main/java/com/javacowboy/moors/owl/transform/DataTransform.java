@@ -13,7 +13,11 @@ public class DataTransform {
 	
 	public AzgfdData convert(OwlData in) {
 		AzgfdData out = new AzgfdData();
-		
+		out.setEast(in.getUtmE());
+		out.setNorth(in.getUtmN());
+		out.setZone(in.getUtmZone());
+		out.setSex(in.getSex());
+		out.setStage(in.getAge());
 		return out;
 	}
 

@@ -31,11 +31,19 @@ public class OwlAzgfdApplication implements CommandLineRunner {
 	public void run(String...args) {
 		File outSheet = getOutputSheet();
 		List<File> inputSheets = getInputSheets();
-		for(File sheet : inputSheets) {
-			System.out.println("Parsing file: " + sheet.getName());
-			List<OwlData> inData = excelReader.readSheet(sheet);
+		int fileNumber = 0;
+		for(File inSheet : inputSheets) {
+			fileNumber++;
+			System.out.println("Parsing file: " + inSheet.getName());
+			List<OwlData> inData = excelReader.readSheet(inSheet);
 			List<AzgfdData> outData = dataTransform.convert(inData);
-			excelWriter.appendToSheet(outSheet, outData);
+			if(fileNumber == 1) {
+				System.out.println("Generating file: " + outSheet.getName());
+				excelWriter.createSheet(outSheet, outData);
+			}else {
+				System.out.println("Appending data to file: " + outSheet.getName());
+				excelWriter.appendToSheet(outSheet, outData);
+			}
 		}
 	}
 
@@ -60,7 +68,7 @@ public class OwlAzgfdApplication implements CommandLineRunner {
 			for(File file : dir.listFiles()) {
 				if(file.isDirectory()) {
 					list.addAll(getExcelFiles(file));
-				}else if(file.isFile() && file.getName().toLowerCase().endsWith(".xlsx")) {
+				}else if(file.isFile() && file.getName().toLowerCase().endsWith(".xlsx") && file.getName().toLowerCase().contains("database")) {
 					list.add(file);
 				}
 			}
