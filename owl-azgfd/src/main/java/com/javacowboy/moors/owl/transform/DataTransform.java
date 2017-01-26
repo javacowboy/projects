@@ -19,8 +19,10 @@ public class DataTransform {
 
 	public List<AzgfdData> convert(List<OwlData> inData) {
 		List<AzgfdData> outData = new ArrayList<>();
-		for(OwlData data : inData) {
-			outData.add(convert(data));
+		if(inData != null) {
+			for(OwlData data : inData) {
+				outData.add(convert(data));
+			}
 		}
 		return outData;
 	}

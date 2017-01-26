@@ -6,6 +6,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.javacowboy.moors.owl.model.AzgfdData;
@@ -15,19 +17,18 @@ import com.javacowboy.moors.owl.spreadsheet.ExcelWriter;
 import com.javacowboy.moors.owl.transform.DataTransform;
 
 @SpringBootApplication
-public class OwlAzgfdApplication {
+public class OwlAzgfdApplication implements CommandLineRunner {
 	
 	@Inject private ExcelReader excelReader;
 	@Inject private ExcelWriter excelWriter;
 	@Inject private DataTransform dataTransform;
 
 	public static void main(String[] args) {
-//		SpringApplication.run(OwlAzgfdApplication.class, args);
-		OwlAzgfdApplication instance = new OwlAzgfdApplication();
-		instance.run();
+		SpringApplication.run(OwlAzgfdApplication.class, args);
 	}
 
-	private void run() {
+	@Override
+	public void run(String...args) {
 		File outSheet = getOutputSheet();
 		List<File> inputSheets = getInputSheets();
 		for(File sheet : inputSheets) {

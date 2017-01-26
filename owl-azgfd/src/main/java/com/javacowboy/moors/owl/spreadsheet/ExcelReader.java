@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -29,7 +30,11 @@ public class ExcelReader {
 				Iterator<Cell> cellIterator = row.iterator();
 				while(cellIterator.hasNext()) {
 					Cell cell = cellIterator.next();
-					System.out.println(cell.getStringCellValue());
+					if (cell.getCellType() == CellType.STRING.getCode()) {
+                        System.out.println(cell.getStringCellValue());
+                    } else if (cell.getCellType() == CellType.NUMERIC.getCode()) {
+                        System.out.println(cell.getNumericCellValue());
+                    }
 				}
 			}
 			workbook.close();
