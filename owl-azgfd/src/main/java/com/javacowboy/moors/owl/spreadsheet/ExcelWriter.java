@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -23,6 +25,7 @@ public class ExcelWriter {
 	private static final String SHEET_DATA = "Report Form";
 	private static final String SHEET_NOTES = "Notes";
 	private static final String SHEET_WATER_LIST = "Water body List";
+	private static final SimpleDateFormat outFormat = new SimpleDateFormat("yyyy-MM-dd");
 
 	public void createSheet(File outFile, List<AzgfdData> outData) {
 		XSSFWorkbook workbook = new XSSFWorkbook();
@@ -30,6 +33,8 @@ public class ExcelWriter {
         int rowNumber = 0;
 		rowNumber = createHeader(sheet, rowNumber);
 		rowNumber = writeData(sheet, outData, rowNumber);
+		workbook.createSheet(SHEET_NOTES);
+		workbook.createSheet(SHEET_WATER_LIST);
 		try {
 			FileOutputStream fileOutputStream = new FileOutputStream(outFile);
 			workbook.write(fileOutputStream);
@@ -80,14 +85,23 @@ public class ExcelWriter {
 		for(OutputColumn column : OutputColumn.values()) {
 			Cell cell = row.createCell(columnNumber++);
 			switch(column) {
+			case CN:
+				writeCell(cell, data.getCommonName());
+				break;
 			case EAST:
 				writeCell(cell, data.getEast());
+				break;
+			case DATE:
+				writeCell(cell, data.getDate());
 				break;
 			case NORTH:
 				writeCell(cell, data.getNorth());
 				break;
 			case SEX:
 				writeCell(cell, data.getSex());
+				break;
+			case SN:
+				writeCell(cell, data.getScientificName());
 				break;
 			case STAGE:
 				writeCell(cell, data.getStage());
@@ -101,7 +115,7 @@ public class ExcelWriter {
 			}
 		}
 	}
-	
+
 	private void writeCell(Cell cell, String value) {
 		if(value == null) {
 			value = "";
@@ -115,6 +129,14 @@ public class ExcelWriter {
 		}else {
 			cell.setCellValue(value);
 		}
+	}
+	
+	private void writeCell(Cell cell, Date date) {
+		String dateString = "";
+		if(date != null) {
+			dateString = outFormat.format(date);
+		}
+		writeCell(cell, dateString);
 	}
 
 }
