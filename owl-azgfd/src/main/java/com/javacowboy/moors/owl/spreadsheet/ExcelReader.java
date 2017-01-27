@@ -43,6 +43,7 @@ public class ExcelReader {
 					//don't include where UTM E or N equals a "?" -- ? doesn't parse to a number, so it'll be null
 					if(rowData.getSpp() != null && !rowData.getSpp().trim().isEmpty()
 							&& rowData.getUtmE() != null && rowData.getUtmN() != null) {
+						rowData.setArea(excelFile.getName());
 						list.add(rowData);
 					}
 				}

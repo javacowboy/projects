@@ -8,7 +8,9 @@ import java.util.List;
 
 import org.springframework.stereotype.Component;
 
+import com.javacowboy.moors.owl.model.Area;
 import com.javacowboy.moors.owl.model.AzgfdData;
+import com.javacowboy.moors.owl.model.Lifestage;
 import com.javacowboy.moors.owl.model.OwlData;
 import com.javacowboy.moors.owl.model.Species;
 
@@ -16,7 +18,15 @@ import com.javacowboy.moors.owl.model.Species;
 public class DataTransform {
 	
 	private static final SimpleDateFormat inFormat = new SimpleDateFormat("yyyy-MMMMM-dd");
+	private static final int DEFAULT_NUMBER = 1;
+	private static final String DEFAULT_DISPOSITION = "Not Handled";
+	private static final String DEFAULT_DATUM = "NAD83";
+	private static final String MNT_RANGE_SUFFIX = ", Coronado National Forest";
+		
 	
+	//The # column will always be = 1, the disposition column will always say Not Handled, and the Datum column will always be NAD83
+	//Mountain range = other locality data and we will add a comma and text saying Coronado National forest (ie, Huachuca Mountains, Coronado National Forest)
+	//Age = Lifestage and we will write it out, so Age = A would be Lifestate = Adult, U= Unknown, S= Subadult, Y= Nestling, Nest = Nest
 	public AzgfdData convert(OwlData in) {
 		AzgfdData out = new AzgfdData();
 		Species species = Species.getByName(in.getSpp());
@@ -28,8 +38,13 @@ public class DataTransform {
 		out.setNorth(in.getUtmN());
 		out.setZone(in.getUtmZone());
 		out.setSex(in.getSex());
-		out.setStage(in.getAge());
+		out.setStage(getLifeStage(in.getAge()));
 		out.setDate(getDate(in));
+		out.setNumber(DEFAULT_NUMBER);
+		out.setDisposition(DEFAULT_DISPOSITION);
+		out.setDatum(DEFAULT_DATUM);
+		out.setLocation(getLocation(in));
+		out.setCounty(getCounty(in.getArea()));
 		return out;
 	}
 
@@ -52,6 +67,28 @@ public class DataTransform {
 			e.printStackTrace();
 		}
 		return null;
+	}
+	
+	private String getLocation(OwlData in) {
+		return in.getMountainRange() == null ? null : (in.getMountainRange() + MNT_RANGE_SUFFIX);
+	}
+	
+	private String getLifeStage(String age) {
+		Lifestage stage = Lifestage.getByName(age);
+		if(stage != null) {
+			return stage.getValue();
+		}
+		System.err.println("Could not translate age: " + age);
+		return age;
+	}
+	
+	private String getCounty(String area) {
+		Area a = Area.getByArea(area);
+		if(a != null) {
+			return a.getCounty();
+		}
+		System.err.println("Could not translate county: " + area);
+		return area;
 	}
 
 }

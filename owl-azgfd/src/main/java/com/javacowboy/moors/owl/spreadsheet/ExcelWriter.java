@@ -85,6 +85,9 @@ public class ExcelWriter {
 		for(OutputColumn column : OutputColumn.values()) {
 			Cell cell = row.createCell(columnNumber++);
 			switch(column) {
+			case COUNTY:
+				writeCell(cell, data.getCounty());
+				break;
 			case CN:
 				writeCell(cell, data.getCommonName());
 				break;
@@ -94,8 +97,20 @@ public class ExcelWriter {
 			case DATE:
 				writeCell(cell, data.getDate());
 				break;
+			case DATUM:
+				writeCell(cell, data.getDatum());
+				break;
+			case DISPOSITION:
+				writeCell(cell, data.getDisposition());
+				break;
+			case LOCATION:
+				writeCell(cell, data.getLocation());
+				break;
 			case NORTH:
 				writeCell(cell, data.getNorth());
+				break;
+			case NUM:
+				writeCell(cell, data.getNumber());
 				break;
 			case SEX:
 				writeCell(cell, data.getSex());

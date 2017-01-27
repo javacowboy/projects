@@ -19,7 +19,7 @@ public enum OutputColumn {
 	MARKED("Marked"),	
 	TAG("Field Tag"),	
 	HABITAT("Habitat Description"),	
-	LOCALE("Other locality data"),	
+	LOCATION("Other locality data"),	
 	COMMENT("Comments (reproductive status, behavior, etc.)");
 	
 	private String columnName;

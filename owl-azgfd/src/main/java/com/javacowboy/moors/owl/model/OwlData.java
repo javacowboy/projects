@@ -24,6 +24,7 @@ public class OwlData {
 	private Integer utmE;
 	private Integer utmN;
 	private String utmZone;
+	private String area;
 	
 	public String getSpp() {
 		return spp;
@@ -84,6 +85,12 @@ public class OwlData {
 	}
 	public void setUtmZone(String utmZone) {
 		this.utmZone = utmZone;
+	}
+	public String getArea() {
+		return area;
+	}
+	public void setArea(String area) {
+		this.area = area;
 	}
 
 }

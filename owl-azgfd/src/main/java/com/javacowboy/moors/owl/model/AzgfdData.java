@@ -23,12 +23,15 @@ import java.util.Date;
 	LOCALE("Other locality data"),	
 	COMMENT("Comments (reproductive status, behavior, etc.)");
 	
+	the # column will always be = 1, the disposition column will always say Not Handled, and the Datum column will always be NAD83
+ 
+	
  */
 public class AzgfdData {
 	
 	private String scientificName;
 	private String commonName;
-	private String number;
+	private Integer number;
 	private Date date;
 	private String county;
 	private String water;
@@ -43,7 +46,7 @@ public class AzgfdData {
 	private String marked;
 	private String tag;
 	private String habitat;
-	private String locale;
+	private String location;
 	private String comment;
 	
 	public String getScientificName() {
@@ -58,10 +61,10 @@ public class AzgfdData {
 	public void setCommonName(String commonName) {
 		this.commonName = commonName;
 	}
-	public String getNumber() {
+	public Integer getNumber() {
 		return number;
 	}
-	public void setNumber(String number) {
+	public void setNumber(Integer number) {
 		this.number = number;
 	}
 	public Date getDate() {
@@ -148,11 +151,11 @@ public class AzgfdData {
 	public void setHabitat(String habitat) {
 		this.habitat = habitat;
 	}
-	public String getLocale() {
-		return locale;
+	public String getLocation() {
+		return location;
 	}
-	public void setLocale(String locale) {
-		this.locale = locale;
+	public void setLocation(String location) {
+		this.location = location;
 	}
 	public String getComment() {
 		return comment;
