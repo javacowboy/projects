@@ -1,0 +1,2 @@
+Copy the Excel Spreadsheet database files to this folder.
+Or copy the folder that contains the databae files to this folder.
