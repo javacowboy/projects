@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import com.javacowboy.moors.owl.model.Area;
 import com.javacowboy.moors.owl.model.AzgfdData;
+import com.javacowboy.moors.owl.model.Gender;
 import com.javacowboy.moors.owl.model.Lifestage;
 import com.javacowboy.moors.owl.model.OwlData;
 import com.javacowboy.moors.owl.model.Species;
@@ -27,6 +28,7 @@ public class DataTransform {
 	//The # column will always be = 1, the disposition column will always say Not Handled, and the Datum column will always be NAD83
 	//Mountain range = other locality data and we will add a comma and text saying Coronado National forest (ie, Huachuca Mountains, Coronado National Forest)
 	//Age = Lifestage and we will write it out, so Age = A would be Lifestate = Adult, U= Unknown, S= Subadult, Y= Nestling, Nest = Nest
+	//Also, the age = -- and sex = -- are likely because Obs type = NEST…..I forgot to have you grab all the Obs type = NEST and put them as lifestage = NEST and then leave the age and sex as –
 	public AzgfdData convert(OwlData in) {
 		AzgfdData out = new AzgfdData();
 		Species species = Species.getByName(in.getSpp());
@@ -37,8 +39,17 @@ public class DataTransform {
 		out.setEast(in.getUtmE());
 		out.setNorth(in.getUtmN());
 		out.setZone(in.getUtmZone());
-		out.setSex(in.getSex());
-		out.setStage(getLifeStage(in.getAge()));
+		out.setSex(getSex(in.getSex()));
+		if(in.getAge() != null && in.getAge().trim().equals(("--"))) {
+			if(in.getObsType() != null && in.getObsType().toLowerCase().equals("nest")) {
+				out.setStage(Lifestage.N.getValue());
+			}else {
+				System.err.println("Could not translate age: " + in.getAge());
+				out.setStage(in.getAge());
+			}
+		}else {
+			out.setStage(getLifeStage(in.getAge()));
+		}
 		out.setDate(getDate(in));
 		out.setNumber(DEFAULT_NUMBER);
 		out.setDisposition(DEFAULT_DISPOSITION);
@@ -71,6 +82,15 @@ public class DataTransform {
 	
 	private String getLocation(OwlData in) {
 		return in.getMountainRange() == null ? null : (in.getMountainRange() + MNT_RANGE_SUFFIX);
+	}
+	
+	private String getSex(String sex) {
+		Gender gender = Gender.getByName(sex);
+		if(gender != null) {
+			return gender.getValue();
+		}
+		System.err.println("Could not translate sex: " + sex);
+		return sex;
 	}
 	
 	private String getLifeStage(String age) {

@@ -3,10 +3,11 @@ package com.javacowboy.moors.owl.model;
 public enum Lifestage {
 
 	A("Adult"), 
-	U("Unknown"), 
+	U("Unknown Age"), 
 	S("Subadult"), 
-	Y("Nestling"), 
-	N("Nest")
+	Y("Young"), 
+	N("Nest"),
+	H("Hatchling")
 	;
 	
 	private String value;
