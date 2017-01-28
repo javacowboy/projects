@@ -81,7 +81,14 @@ public class DataTransform {
 	}
 	
 	private String getLocation(OwlData in) {
-		return in.getMountainRange() == null ? null : (in.getMountainRange() + MNT_RANGE_SUFFIX);
+		String location = in.getMountainRange();
+		if(location != null) {
+			if(!location.toLowerCase().endsWith("mountains")) {
+				location += " Mountains";
+			}
+			location += MNT_RANGE_SUFFIX;
+		}
+		return location;
 	}
 	
 	private String getSex(String sex) {
