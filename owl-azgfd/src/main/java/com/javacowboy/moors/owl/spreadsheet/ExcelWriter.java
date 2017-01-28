@@ -51,7 +51,9 @@ public class ExcelWriter {
 			Workbook workbook = new XSSFWorkbook(fileInputStream);
 			Sheet dataSheet = workbook.getSheet(SHEET_DATA);
 			int lastRow = dataSheet.getPhysicalNumberOfRows();
-			lastRow++;
+			if(!isEmptyRow(dataSheet, lastRow)) {
+				lastRow++;
+			}
 			writeData(dataSheet, outData, lastRow);
 			FileOutputStream fileOutputStream = new FileOutputStream(outFile);
 			workbook.write(fileOutputStream);
@@ -62,6 +64,14 @@ public class ExcelWriter {
 		}
 	}
 	
+	private boolean isEmptyRow(Sheet dataSheet, int rowNumber) {
+		Row row = dataSheet.getRow(rowNumber);
+		if(row == null || row.getPhysicalNumberOfCells() == 0) {
+			return true;
+		}
+		return false;
+	}
+
 	private int createHeader(XSSFSheet sheet, int rowNumber) {
 		Row row = sheet.createRow(rowNumber++);
 		int columnNumber = 0;
