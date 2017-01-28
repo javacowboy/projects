@@ -22,6 +22,7 @@ public enum InputColumn {
 	SEX("Sex"),
 	AGE("Age"),
 	OBS_TYPE("Obs. Type"),
+	PAC_NAME("PAC Name"),
 	UTM_E("UTM E"),
 	UTM_N("UTM N"),
 	UTM_ZONE("UTM ZONE");

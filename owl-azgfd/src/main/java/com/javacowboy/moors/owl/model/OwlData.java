@@ -22,6 +22,7 @@ public class OwlData {
 	private String sex;
 	private String age;
 	private String obsType;
+	private String pacName;
 	private Integer utmE;
 	private Integer utmN;
 	private String utmZone;
@@ -74,6 +75,12 @@ public class OwlData {
 	}
 	public void setObsType(String obsType) {
 		this.obsType = obsType;
+	}
+	public String getPacName() {
+		return pacName;
+	}
+	public void setPacName(String pacName) {
+		this.pacName = pacName;
 	}
 	public Integer getUtmE() {
 		return utmE;

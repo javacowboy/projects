@@ -96,6 +96,9 @@ public class ExcelReader {
 		case MOUNTAIN:
 			data.setMountainRange(getString(cell));
 			break;
+		case PAC_NAME:
+			data.setPacName(getString(cell));
+			break;
 		case OBS_TYPE:
 			data.setObsType(getString(cell));
 			break;
