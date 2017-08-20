@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<customReport name="Friends of Scouting Export" description="" isPortrait="false" groupOption="HOUSEHOLD" splitGroups="false">
+  <query string="4,0,0,true,-1" />
+  <column typeID="31" width="11" />
+  <column typeID="41" width="11" />
+  <column typeID="2" width="11" />
+  <column typeID="3" width="11" />
+  <column typeID="4" width="11" />
+  <column typeID="5" width="11" />
+  <column typeID="6" width="11" />
+  <column typeID="89" width="11" />
+  <column typeID="90" width="11" />
+</customReport>
+
