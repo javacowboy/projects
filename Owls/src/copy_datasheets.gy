@@ -3,11 +3,12 @@
 import groovy.util.AntBuilder
 
 //vars
-TOP_DIR = "../test/" //my computer
-//TOP_DIR = "C:/Users/Owner/My Documents/2012 CHRIS TL/2012 CHRIS SURVEYS/" //amandas computer
-FROM_DIR_PATTERN = "PAC"
+//TOP_DIR = "../test/" //my computer
+//TO_DIR = "../test/out/" //my computer
+TOP_DIR = "C:/Users/Owner/Dropbox/2018 Coronado NF SURVEYS/2018 CHIRICAHUA MSO SURVEYS" //amandas computer
+FROM_DIR_PATTERN = ["PAC", "INVENTORY"]
 DATA_DIR_NAME = "DATASHEETS"
-TO_DIR = TOP_DIR + "All Tony's datasheets"
+TO_DIR = "C:/Users/Owner/Documents/Contractual work/Mt Graham and Chiricahuas/CHIRICAHUAS 2018/ALL CHIRICAHUA DATASHEETS 2018"
 ignoreHiddenFiles=true
 
 //main
@@ -20,13 +21,19 @@ if (!top.exists()) {
 
 //methods
 void handleTopDirectory(top) {
+	println("Checking directory: " + top)
     top.listFiles().each { folder ->
-        if (folder.isDirectory() && folder.getName().startsWith(FROM_DIR_PATTERN)) {
-            folder.listFiles().each { subFolder ->
-                if (subFolder.isDirectory() && subFolder.getName().equals(DATA_DIR_NAME)) {
-                    copyFiles(subFolder, new File(TO_DIR))
-                }
-            }
+        if (folder.isDirectory()) {
+        		FROM_DIR_PATTERN.each { validPattern ->
+        			if(folder.getName().contains(validPattern)) {
+	        			println("Processing: " + folder.getName())
+		            folder.listFiles().each { subFolder ->
+		                if (subFolder.isDirectory() && subFolder.getName().equals(DATA_DIR_NAME)) {
+		                    copyFiles(subFolder, new File(TO_DIR))
+		                }
+		            }
+        			}
+        		}
         }
     }
 }
@@ -50,6 +57,7 @@ void copyFiles(fromDir, toDir) {
             output.close()
         }
     }
+    println("")
 }
 
 /*
