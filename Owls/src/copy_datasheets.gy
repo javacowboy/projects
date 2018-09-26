@@ -3,12 +3,15 @@
 import groovy.util.AntBuilder
 
 //vars
-//TOP_DIR = "../test/" //my computer
-//TO_DIR = "../test/out/" //my computer
+//TOP_DIR = "../test" //my computer
+//TO_DIR = "../test/out" //my computer
 TOP_DIR = "C:/Users/Owner/Dropbox/2018 Coronado NF SURVEYS/2018 CHIRICAHUA MSO SURVEYS" //amandas computer
 FROM_DIR_PATTERN = ["PAC", "INVENTORY"]
 DATA_DIR_NAME = "DATASHEETS"
 TO_DIR = "C:/Users/Owner/Documents/Contractual work/Mt Graham and Chiricahuas/CHIRICAHUAS 2018/ALL CHIRICAHUA DATASHEETS 2018"
+TO_SURVEY_DIR = TO_DIR + "/Survey forms"
+TO_NEST_DIR = TO_DIR + "/Nest and Roost forms"
+NEST_FILE_PATTERN = ["NEST", "ROOST"]
 ignoreHiddenFiles=true
 
 //main
@@ -29,7 +32,7 @@ void handleTopDirectory(top) {
 	        			println("Processing: " + folder.getName())
 		            folder.listFiles().each { subFolder ->
 		                if (subFolder.isDirectory() && subFolder.getName().equals(DATA_DIR_NAME)) {
-		                    copyFiles(subFolder, new File(TO_DIR))
+		                    copyFiles(subFolder)
 		                }
 		            }
         			}
@@ -38,18 +41,19 @@ void handleTopDirectory(top) {
     }
 }
 
-void copyFiles(fromDir, toDir) {
+void copyFiles(fromDir) {
     println("")
-    toDir.mkdirs()
-    println("Copying From: " + fromDir.getPath())
-    println("Copying To:" + toDir.getPath())
     fromDir.listFiles().each{ srcFile ->
         if (ignoreHiddenFiles && srcFile.getName().startsWith(".")) {
             return
         }
         if (srcFile.isFile()) {
-            destFile = new File(toDir, srcFile.getName())
-            println("Copying File:" + destFile.getName())
+        		destDir = getDestinationDirectory(srcFile)
+            destFile = new File(destDir, srcFile.getName())
+            destFile.getParentFile().mkdirs();
+            println("Copying From: " + fromDir.getPath())
+			println("Copying To: " + destDir)
+            println("Copying File: " + destFile.getName())
             input = srcFile.newDataInputStream()
             output = destFile.newDataOutputStream()
             output << input
@@ -60,18 +64,13 @@ void copyFiles(fromDir, toDir) {
     println("")
 }
 
-/*
-void copyFiles(fromDir, toDir) {
-    println("")
-    println("Copying From: " + fromDir.getPath())
-    toDir.mkdirs()
-    fromDir.listFiles().each { srcFile ->
-        if (ignoreHiddenFiles && srcFile.getName().startsWith(".")) {
-            return
-        }
-        if (srcFile.isFile()) {
-            destFile = new File(toDir, srcFile.getName())
-            new AntBuilder().copy(file: srcFile, tofile: destFile, overwrite: true)
-        }
-    }
-}*/
+String getDestinationDirectory(srcFile) {
+	destDir = TO_SURVEY_DIR
+	for(pattern in NEST_FILE_PATTERN) {
+		if(srcFile.getName().toLowerCase().contains(pattern.toLowerCase())) {
+			destDir = TO_NEST_DIR
+			break
+		}
+	}
+	return destDir
+}
