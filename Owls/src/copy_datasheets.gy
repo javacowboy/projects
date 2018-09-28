@@ -11,7 +11,7 @@ DATA_DIR_NAME = "DATASHEETS"
 TO_DIR = "C:/Users/Owner/Documents/Contractual work/Mt Graham and Chiricahuas/CHIRICAHUAS 2018/ALL CHIRICAHUA DATASHEETS 2018"
 TO_SURVEY_DIR = TO_DIR + "/Survey forms"
 TO_NEST_DIR = TO_DIR + "/Nest and Roost forms"
-NEST_FILE_PATTERN = ["NEST", "ROOST"]
+NEST_FILE_PATTERN = ["FORM"]
 ignoreHiddenFiles=true
 
 //main

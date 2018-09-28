@@ -7,14 +7,16 @@ import java.text.ParseException
 INPUT_DIR="../input" //my computer
 INPUT_DIR="C:/Users/Owner/Dropbox/2013 MT GRAHAM MSO not for USFS/test conversion files" //amanda's computer
 
-OUTPUT_DIR="./"
+OUT_DIR="./"
+OUTPUT_DIR=OUT_DIR + "output/"
+OUT_EARTH_DIR=OUT_DIR + "Google Earth Files/"
 OUTPUT_FILE=OUTPUT_DIR + "output.csv"
-USFS_FILE=OUTPUT_DIR + "usfs.csv"
-EARTH_MALES_FILE=OUTPUT_DIR + "MSO_MALES.csv"
-EARTH_FEMALES_FILE=OUTPUT_DIR + "MSO_FEMALES.csv"
-EARTH_NESTS_FILE=OUTPUT_DIR + "MSO_NESTS.csv"
-EARTH_YOUNG_FILE=OUTPUT_DIR + "MSO_YOUNG.csv"
-EARTH_UNKNOWN_FILE=OUTPUT_DIR + "MSO_UNKNOWN.csv"
+USFS_FILE=OUTPUT_DIR + "call_points.csv"
+EARTH_MALES_FILE=OUT_EARTH_DIR + "MSO_MALES.csv"
+EARTH_FEMALES_FILE=OUT_EARTH_DIR + "MSO_FEMALES.csv"
+EARTH_NESTS_FILE=OUT_EARTH_DIR + "MSO_NESTS.csv"
+EARTH_YOUNG_FILE=OUT_EARTH_DIR + "MSO_YOUNG.csv"
+EARTH_UNKNOWN_FILE=OUT_EARTH_DIR + "MSO_UNKNOWN.csv"
 
 //vars that need to be reset after each file
 isDateFound = false
@@ -125,6 +127,7 @@ void promptForManualUtmZone() {
 }
 
 void execute() {
+	mkdirs()
 	clean()
 	appendToOutputFile(OwlData.getHeader(), false)
     appendToUsfsFile(USFSData.getHeader(), false)
@@ -243,6 +246,13 @@ void parseLine(line, owlData, usfsData){
   parseDataTable(line, owlData, usfsData)
   parseMiceUsed(line, owlData)
   parseNestingStatus(line, owlData)
+}
+
+void mkdirs(){
+	dirs = [OUTPUT_DIR, OUT_EARTH_DIR]
+	for(dir in dirs) {
+		new File(dir).mkdirs()
+	}
 }
 
 void clean(){
