@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat
 import java.text.ParseException
 
 //vars
-INPUT_DIR="../input" //my computer
+//INPUT_DIR="../input" //my computer
 INPUT_DIR="C:/Users/Owner/Dropbox/2013 MT GRAHAM MSO not for USFS/test conversion files" //amanda's computer
 
 OUT_DIR="./"
@@ -17,6 +17,7 @@ EARTH_FEMALES_FILE=OUT_EARTH_DIR + "MSO_FEMALES.csv"
 EARTH_NESTS_FILE=OUT_EARTH_DIR + "MSO_NESTS.csv"
 EARTH_YOUNG_FILE=OUT_EARTH_DIR + "MSO_YOUNG.csv"
 EARTH_UNKNOWN_FILE=OUT_EARTH_DIR + "MSO_UNKNOWN.csv"
+EARTH_OTHERS_FILE=OUT_EARTH_DIR + "OWLS.csv"
 
 //vars that need to be reset after each file
 isDateFound = false
@@ -136,6 +137,7 @@ void execute() {
 	appendToFile(EARTH_NESTS_FILE, OwlData.getEarthHeader() + GoogleEarthColumn.getHeader(), false)
 	appendToFile(EARTH_YOUNG_FILE, OwlData.getEarthHeader() + GoogleEarthColumn.getHeader(), false)
 	appendToFile(EARTH_UNKNOWN_FILE, OwlData.getEarthHeader() + GoogleEarthColumn.getHeader(), false)
+	appendToFile(EARTH_OTHERS_FILE, OwlData.getEarthHeader() + GoogleEarthColumn.getHeader(), false)
 	println("Searching directory: " + INPUT_DIR)
 	handlePath(new File(INPUT_DIR))
 }
@@ -256,7 +258,7 @@ void mkdirs(){
 }
 
 void clean(){
-	files = [OUTPUT_FILE, USFS_FILE, EARTH_MALES_FILE, EARTH_FEMALES_FILE, EARTH_NESTS_FILE, EARTH_YOUNG_FILE, EARTH_UNKNOWN_FILE]
+	files = [OUTPUT_FILE, USFS_FILE, EARTH_MALES_FILE, EARTH_FEMALES_FILE, EARTH_NESTS_FILE, EARTH_YOUNG_FILE, EARTH_UNKNOWN_FILE, EARTH_OTHERS_FILE]
 	for(filePath in files) {
 		file = new File(filePath)
 		if(file.exists()) {
@@ -323,6 +325,11 @@ void appendToEarthFiles(owlData) {
 //						println("EARTH UNKNOWN FILE")
 						appendToFile(EARTH_UNKNOWN_FILE, detail.toEarthString(lineNumber) + GoogleEarthValue.UNKNOWN.toString(), true)
 					}
+				}
+			}else {
+				if(detail.utmE != null && !detail.utmE.isEmpty()) {
+					println("EARTH OTHER FILE")
+					appendToFile(EARTH_OTHERS_FILE, detail.toEarthString(lineNumber) + GoogleEarthValue.OTHER.toString(), true)
 				}
 			}
 			lineNumber++
@@ -1039,7 +1046,8 @@ enum GoogleEarthValue {
 	FEMALE(209, 300, 0.6, "none"),
 	NEST(238, null, 1.2, "none"),
 	YOUNG(205, 20, 1.3, "none"),
-	UNKNOWN(209, 0, 0.6, "none");
+	UNKNOWN(209, 0, 0.6, "none"),
+	OTHER(209, 0, 0.6, "none");
 	
 	private int icon;
 	private Integer color;
