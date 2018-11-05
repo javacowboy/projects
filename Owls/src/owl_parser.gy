@@ -327,7 +327,8 @@ void appendToEarthFiles(owlData) {
 					}
 				}
 			}else {
-				if(detail.utmE != null && !detail.utmE.isEmpty()) {
+				//some dashes or a ? indicates owl heard but location unsure
+				if(detail.utmE != null && !detail.utmE.isEmpty() && !"?".equals(detail.utmE) && !detail.utmE.contains("-")) {
 					println("EARTH OTHER FILE")
 					appendToFile(EARTH_OTHERS_FILE, detail.toEarthString(lineNumber) + GoogleEarthValue.OTHER.toString(), true)
 				}
