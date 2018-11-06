@@ -4,8 +4,8 @@ import java.text.SimpleDateFormat
 import java.text.ParseException
 
 //vars
-//INPUT_DIR="../input" //my computer
-INPUT_DIR="C:/Users/Owner/Dropbox/2013 MT GRAHAM MSO not for USFS/test conversion files" //amanda's computer
+INPUT_DIR="../input" //my computer
+//INPUT_DIR="C:/Users/Owner/Dropbox/2013 MT GRAHAM MSO not for USFS/test conversion files" //amanda's computer
 
 OUT_DIR="./"
 OUTPUT_DIR=OUT_DIR + "output/"
@@ -47,6 +47,9 @@ includeAbortedFiles = null
 manualUtmZone = null
 defaultUtmZone = "12S"
 
+//prompt for all output files or just OWLS Google Earth file
+onlyGenerateOwlsEarthFile = false;
+
 //main----------------------------------------------------------------------------------------
 if(args.size() > 0) {
 	if(isNumber(args[0])){
@@ -84,7 +87,7 @@ void checkForManualUtmZone() {
 	if(manualUtmZone == null) {
 		promptForManualUtmZone()
 	}else {
-		execute()
+		promptForOnlyGenerateOwlsEarthFile()
 	}
 }
 
@@ -127,16 +130,29 @@ void promptForManualUtmZone() {
 	}
 }
 
+void promptForOnlyGenerateOwlsEarthFile() {
+	System.in.withReader{
+		println("Only generate OWLS Google Earth file?")
+		input = it.readLine()
+		if(input != null && input.toLowerCase().startsWith("y")) {
+			onlyGenerateOwlsEarthFile = true
+		}
+	}
+	execute()
+}
+
 void execute() {
 	mkdirs()
 	clean()
-	appendToOutputFile(OwlData.getHeader(), false)
-    appendToUsfsFile(USFSData.getHeader(), false)
-	appendToFile(EARTH_MALES_FILE, OwlData.getEarthHeader() + GoogleEarthColumn.getHeader(), false)
-	appendToFile(EARTH_FEMALES_FILE, OwlData.getEarthHeader() + GoogleEarthColumn.getHeader(), false)
-	appendToFile(EARTH_NESTS_FILE, OwlData.getEarthHeader() + GoogleEarthColumn.getHeader(), false)
-	appendToFile(EARTH_YOUNG_FILE, OwlData.getEarthHeader() + GoogleEarthColumn.getHeader(), false)
-	appendToFile(EARTH_UNKNOWN_FILE, OwlData.getEarthHeader() + GoogleEarthColumn.getHeader(), false)
+	if(!onlyGenerateOwlsEarthFile) {
+		appendToOutputFile(OwlData.getHeader(), false)
+		appendToUsfsFile(USFSData.getHeader(), false)
+		appendToFile(EARTH_MALES_FILE, OwlData.getEarthHeader() + GoogleEarthColumn.getHeader(), false)
+		appendToFile(EARTH_FEMALES_FILE, OwlData.getEarthHeader() + GoogleEarthColumn.getHeader(), false)
+		appendToFile(EARTH_NESTS_FILE, OwlData.getEarthHeader() + GoogleEarthColumn.getHeader(), false)
+		appendToFile(EARTH_YOUNG_FILE, OwlData.getEarthHeader() + GoogleEarthColumn.getHeader(), false)
+		appendToFile(EARTH_UNKNOWN_FILE, OwlData.getEarthHeader() + GoogleEarthColumn.getHeader(), false)
+	}
 	appendToFile(EARTH_OTHERS_FILE, OwlData.getEarthHeader() + GoogleEarthColumn.getHeader(), false)
 	println("Searching directory: " + INPUT_DIR)
 	handlePath(new File(INPUT_DIR))
@@ -259,6 +275,9 @@ void mkdirs(){
 
 void clean(){
 	files = [OUTPUT_FILE, USFS_FILE, EARTH_MALES_FILE, EARTH_FEMALES_FILE, EARTH_NESTS_FILE, EARTH_YOUNG_FILE, EARTH_UNKNOWN_FILE, EARTH_OTHERS_FILE]
+	if(onlyGenerateOwlsEarthFile) {
+		files = [EARTH_OTHERS_FILE]
+	}
 	for(filePath in files) {
 		file = new File(filePath)
 		if(file.exists()) {
@@ -284,11 +303,15 @@ void appendToUsfsFile(data) {
 }
 
 void appendToOutputFile(data, withBreak){
-	appendToFile(OUTPUT_FILE, data, withBreak)
+	if(!onlyGenerateOwlsEarthFile) {
+		appendToFile(OUTPUT_FILE, data, withBreak)
+	}
 }
 
 void appendToUsfsFile(data, withBreak){
-	appendToFile(USFS_FILE, data, withBreak)
+	if(!onlyGenerateOwlsEarthFile) {
+		appendToFile(USFS_FILE, data, withBreak)
+	}
 }
 
 void appendToEarthFiles(owlData) {
@@ -308,6 +331,9 @@ void appendToEarthFiles(owlData) {
 		int lineNumber = owlData.startingLineNumber
 		for(detail in owlData.details) {
 			if(detail.species && detail.species.toUpperCase().equals("STOC") && isNumber(detail.utmE)) {
+				if(onlyGenerateOwlsEarthFile) {
+					continue;
+				}
 				if(detail.obsType && detail.obsType.toUpperCase().equals("NEST")) {
 //					println("EARTH NEST FILE")
 					appendToFile(EARTH_NESTS_FILE, detail.toEarthString(lineNumber) + GoogleEarthValue.NEST.toString(), true)
