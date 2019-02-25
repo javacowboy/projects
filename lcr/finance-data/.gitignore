@@ -24,3 +24,7 @@ HELP.md
 /nbdist/
 /.nb-gradle/
 /build/
+
+### Project Specific ###
+Finance.html
+export.csv

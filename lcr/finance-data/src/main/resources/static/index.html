@@ -1,4 +1,18 @@
 <html>
 	<head></head>
-	<body>Hello</body>
+	<body>
+		<form action="/api/process/file">
+			<div>
+				<label>HTML File</label>
+				<input type="text" name="inputFile" value="Finance.html"/>
+			</div>
+			<div>
+				<label>CSV Export File</label>
+				<input type="text" name="outputFile" value="export.csv"/>
+			</div>
+			<div>
+				<button type="submit">Submit</button>
+			</div>
+		</form>
+	</body>
 </html>
