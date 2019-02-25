@@ -39,8 +39,8 @@ public class UiController {
 	 */
 	@EventListener(ApplicationReadyEvent.class)
 	public void applicationReady() {
-//		logger.info("Server started, launching browser");
-//		uiService.launchBrowser(propertyService.getHomePage());
+		logger.info("Server started, launching browser");
+		uiService.launchBrowser(propertyService.getHomePage());
 	}
 
 }

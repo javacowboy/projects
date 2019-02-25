@@ -1,10 +1,26 @@
 <html>
 	<head>
 		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+		<script type="text/javascript">
+			shutdownApp = function() {
+				var http = new XMLHttpRequest();
+				var shutdownUrl = "/actuator/shutdown";
+				http.open("POST", shutdownUrl);
+				http.send();
+				http.onreadystatechange = function() {
+					var response = http.responseText;
+					if(response) {
+						var jsonResponse = JSON.parse(response);
+						var message = jsonResponse.message;
+						document.getElementById("shutdownMessage").innerHTML = message;
+					}
+				};
+			};
+		</script>
 	</head>
 	<body>
 		<div class="container">
-			<form action="/api/process/file">
+			<form id="processForm" action="/api/process/file">
 				<div class="form-group">
 					<label>HTML File</label>
 					<input type="text" class="form-control" name="inputFile" value="Finance.html"/>
@@ -13,10 +29,12 @@
 					<label>CSV Export File</label>
 					<input type="text" class="form-control" name="outputFile" value="export.csv"/>
 				</div>
-				<div class="form-group">
-					<button type="submit" class="btn btn-primary">Submit</button>
-				</div>
 			</form>
+			<div class="form-group">
+				<button type="submit" form="processForm" class="btn btn-primary">Submit</button>
+				<button type="button" class="btn btn-warning" onclick="shutdownApp()">Exit</button>
+			</div>
+			<div id="shutdownMessage"></div>
 		</div>
 	</body>
 </html>
