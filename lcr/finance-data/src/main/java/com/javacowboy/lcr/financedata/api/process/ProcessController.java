@@ -3,16 +3,17 @@ package com.javacowboy.lcr.financedata.api.process;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
 
 import com.javacowboy.lcr.financedata.api.process.csv.CsvService;
 import com.javacowboy.lcr.financedata.api.process.html.HtmlService;
 import com.javacowboy.lcr.financedata.api.process.model.BudgetDto;
+import com.javacowboy.lcr.financedata.ui.UiController;
 
-@RestController
+@Controller
 @RequestMapping("/api/process")
 public class ProcessController {
 	
@@ -25,10 +26,10 @@ public class ProcessController {
 		this.htmlService = htmlService;
 	}
 
-	@GetMapping("/file")
+	@RequestMapping(value="/file", method=RequestMethod.GET)
 	public String processFile(@RequestParam("inputFile") String inputFileName, @RequestParam("outputFile") String outputFileName) {
 		List<BudgetDto> rows = htmlService.parseHtml(inputFileName);
 		csvService.write(rows, outputFileName);
-		return "Complete";
+		return UiController.COMPLETE_PAGE;
 	}
 }

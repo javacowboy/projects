@@ -26,7 +26,8 @@ public class UiController {
 		this.uiService = uiService;
 	}
 	
-	private static final String INDEX_PAGE = "index.html";
+	private static final String INDEX_PAGE = "/index.html";
+	public static final String COMPLETE_PAGE = "/complete.html";
 
 	@GetMapping
 	public String index() {
@@ -38,8 +39,8 @@ public class UiController {
 	 */
 	@EventListener(ApplicationReadyEvent.class)
 	public void applicationReady() {
-		logger.info("Server started, launching browser");
-		uiService.launchBrowser(propertyService.getHomePage());
+//		logger.info("Server started, launching browser");
+//		uiService.launchBrowser(propertyService.getHomePage());
 	}
 
 }
