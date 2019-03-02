@@ -1,6 +1,41 @@
 <html>
 	<head>
 		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+	</head>
+	<body>
+		<div class="container">
+			<br>
+			<form id="scrapeForm" action="/api/process/scrape">
+				<div class="form-group">
+					<label>URL to scrape</label>
+					<input type="text" class="form-control" id="scrapeUrl" name="scrapeUrl"/>
+				</div>
+				<div class="form-group">
+					<label>LDS Credentials</label>
+					<input type="text" class="form-control" name="username"/>
+					<input type="text" class="form-control" name="password"/>
+				</div>
+				<div>
+					<button type="submit" form="scrapeForm" class="btn btn-primary">Scrape</button>
+				</div>
+				
+				<br>
+				<div class="form-group">
+					<label>HTML File</label>
+					<input type="text" class="form-control" name="inputFile" value="Finance.html"/>
+				</div>
+				<div class="form-group">
+					<label>CSV Export File</label>
+					<input type="text" class="form-control" name="outputFile" value="export.csv"/>
+				</div>
+			</form>
+			<div>
+				<button type="submit" form="scrapeForm" class="btn btn-primary" onclick="document.getElementById('scrapeForm').action = '/api/process/file'">Submit</button>
+				<button type="button" class="btn btn-warning" onclick="shutdownApp()">Exit</button>
+			</div>
+			<div id="shutdownMessage"></div>
+		</div>
+		
 		<script type="text/javascript">
 			shutdownApp = function() {
 				var http = new XMLHttpRequest();
@@ -16,25 +51,10 @@
 					}
 				};
 			};
+			(function() {
+				var url = 'https://lcr.lds.org/finance/#/expenses?catOrSubcat=-1&instrumentTypeId=ALL&dateType=previous&fromDate=2018-01-01&toDate=2018-12-31';
+				document.getElementById("scrapeUrl").value = url;
+			})();
 		</script>
-	</head>
-	<body>
-		<div class="container">
-			<form id="processForm" action="/api/process/file">
-				<div class="form-group">
-					<label>HTML File</label>
-					<input type="text" class="form-control" name="inputFile" value="Finance.html"/>
-				</div>
-				<div class="form-group">
-					<label>CSV Export File</label>
-					<input type="text" class="form-control" name="outputFile" value="export.csv"/>
-				</div>
-			</form>
-			<div class="form-group">
-				<button type="submit" form="processForm" class="btn btn-primary">Submit</button>
-				<button type="button" class="btn btn-warning" onclick="shutdownApp()">Exit</button>
-			</div>
-			<div id="shutdownMessage"></div>
-		</div>
 	</body>
 </html>

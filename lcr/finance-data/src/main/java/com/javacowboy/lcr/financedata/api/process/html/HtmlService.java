@@ -11,14 +11,25 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.javacowboy.lcr.financedata.api.process.model.BudgetDto;
 
+/*
+ * Service for parsing a downloaded HTML document
+ */
 @Service
 public class HtmlService {
 	
 	private static final Logger logger = Logger.getLogger(HtmlService.class.getName());
+	
+	private FileService fileService;
+	
+	@Autowired
+	public HtmlService(FileService fileService) {
+		this.fileService = fileService;
+	}
 
 	public List<BudgetDto> parseHtml(String inputFileName) {
 		File html = getHtmlFile(inputFileName);
@@ -142,8 +153,7 @@ public class HtmlService {
 	}
 
 	private File getHtmlFile(String inputFileName) {
-		File file = new File(inputFileName);
-		return file;
+		return fileService.getFile(inputFileName);
 	}
 
 }
