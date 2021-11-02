@@ -79,17 +79,27 @@ void parseHeader(header, dto) {
 
 void parseBody(body, dto) {
 	println("Parsing Word body data")
-//	body.'w:body'.children().each {
-//		tag = it.name()
-//		if("tbl".equals(tag)) {
-//			processTable(it)
-//		}else {
-//			text = it.text()
-//			if(!text.isBlank()) {
-//				println(text) 
-//			} 
-//		}
-//	}
+	body.'w:body'.children().each {
+		tag = it.name()
+		if("tbl".equals(tag)) {
+			processTable(it, dto)
+		}else {
+			text = it.text()
+			//check if a table is coming next
+			if(text.toLowerCase().contains("location data")) {
+				parsingLocationTable = true
+			} 
+			if(text.toLowerCase().contains("physical description")) {
+				parsingDescriptionTable = true
+			} 
+			if(text.toLowerCase().contains("composition and structure")) {
+				parsingCompositionTable = true
+			} 
+			//parse other fields
+			parseTopography(text, dto)
+			parseSubstrate(text, dto)
+		}
+	}
 }
 
 void writeHeader() {
@@ -133,27 +143,77 @@ GPathResult getDocumentHeader(zipFile) {
 	throw new Exception("No header found in Word document.")
 }
 
-String processTable(table) {
-	table.children().each {
-		println("processing table " + it.text())
-		tag = it.name()
-		if("tr".equals(tag)) {
-			processTr(it)
-		}else {
-			println("ignoring:")		
-			println(it.text())
-		}
+void processTable(table, dto) {
+	if(parsingLocationTable) {
+		parseLocationTable(table, dto)
+	}else if(parsingDescriptionTable) {
+		parseDescriptionTable(table, dto)
+	}else if(parsingCompositionTable) {
+		parseCompositionTable(table, dto)
+	}else {
+		println("Ignoring table")
+		println(table.text())
 	}
+	resetParsingVars()
+
+
+//	table.children().each {
+//		println("processing table " + it.text())
+//		tag = it.name()
+//		if("tr".equals(tag)) {
+//			processTr(it)
+//		}else {
+//			println("ignoring:")		
+//			println(it.text())
+//		}
+//	}
 }
 
-String processTr(tr) {
+void parseLocationTable(table, dto) {
+	println("Parsing location table")
+	//row 2, column 2 = UTM E
+	//row 2, column 3 = UTM N
+	dto.utme = table.tr[1].tc[1].text()
+	dto.utmn = table.tr[1].tc[2].text()
+
+	//	table.tr[1].children().each {
+//		println(it.name())
+//		println("\t" + it.text())
+//	}
+}
+
+void parseDescriptionTable(table, dto) {
+	println("Parsing description table")
+	//row 1, column 1 = elevation
+	//row 2, column 1 = slopeAspect
+	//row 2, column 2 = slopePercent
+	//row 2, column 3 = slopeDegrees
+	dto.elevation = extractNumberFromString(table.tr[0].tc[0].text())
+	dto.slopeAspect = extractNumberFromString(table.tr[1].tc[0].text())
+	dto.slopePercent = extractNumberFromString(table.tr[1].tc[1].text())
+	dto.slopeDegrees = extractNumberFromString(table.tr[1].tc[2].text())
+}
+
+void parseCompositionTable(table, dto) {
+	println("Parsing composition table")
+
+}
+
+String extractNumberFromString(value) {
+	//result = value.replaceAll("[^\\d.]", "")
+	result = value.replaceAll("[^0-9.]", "")
+	//println(result)
+	return result
+}
+
+void processTr(tr) {
 	tr.children().each {
 		println(it.name())
 		println(it.text())
 	}
 }
 
-String parseForest(text, dto) {
+void parseForest(text, dto) {
 	begin = "Forest:"
 	end = "District:"
 	if(text.contains(begin)){
@@ -162,7 +222,7 @@ String parseForest(text, dto) {
 	}
 }
 
-String parseDistrict(text, dto) {
+void parseDistrict(text, dto) {
 	begin = "District:"
 	end = "PAC Name and Number:"
 	if(text.contains(begin)){
@@ -171,7 +231,7 @@ String parseDistrict(text, dto) {
 	}
 }
 
-String parsePacInfo(text, dto) {
+void parsePacInfo(text, dto) {
 	//sometimes the form has PAC # and sometimes only PAC 
 	//PAC Name and Number also has PAC in it.
 	//Parse pac name, drop it's begin from the text, then parse for number
@@ -194,7 +254,7 @@ String parsePacInfo(text, dto) {
 	}
 }
 
-String parseMountainRange(text, dto) {
+void parseMountainRange(text, dto) {
 	begin = "Mountain Range:"
 	end = "Quad map name(s):"
 	if(text.contains(begin)){
@@ -203,7 +263,7 @@ String parseMountainRange(text, dto) {
 	}
 }
 
-String parseDate(text, dto) {
+void parseDate(text, dto) {
 	begin = "Date:"
 	end = "Location Type:"
 	if(text.contains(begin)){
@@ -216,12 +276,35 @@ String parseDate(text, dto) {
 	}
 }
 
-String parseLocationType(text, dto) {
+void parseLocationType(text, dto) {
 	begin = "Location Type:"
 	end = null
 	if(text.contains(begin)){
 		println("Parsing location")
 		dto.observationType = parse(text, begin, end)
+	}
+}
+
+void parseTopography(text, dto) {
+	begin = "Topography"
+	end = null
+	if(text.contains(begin)){
+		println("Parsing topography")
+		text = parse(text, begin, end)
+		if(text.contains("(choose one):")) {
+			begin = "(choose one):"
+			text = parse(text, begin, end)
+		}
+		dto.topography = text
+	}
+}
+
+void parseSubstrate(text, dto) {
+	begin = "Substrate:"
+	end = null
+	if(text.contains(begin) && !text.toLowerCase().contains("choose an item")){
+		println("Parsing substrate")
+		dto.substrateType = parse(text, begin, end)
 	}
 }
 
