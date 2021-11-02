@@ -1,11 +1,11 @@
-#!/bin/env groovy
+#!/usr/bin/env groovy
 
 import java.util.zip.*
 import groovy.xml.XmlSlurper
 import groovy.xml.slurpersupport.GPathResult
 
 //vars
-TOP_DIR = "C:/Users/Owner/Dropbox/Nest and Roost forms" //Amanda's computer
+TOP_DIR = "C:/Users/Owner/Documents/Contractual work/Mt Graham and Chiricahuas/MT GRAHAM 2021/ALL DATASHEETS MT GRAHAM 2021" //Amanda's computer
 //TOP_DIR = "../test/out" //my computer
 NEST_DIR = TOP_DIR + "/Nest and Roost forms"
 OUT_FILE = new File(NEST_DIR, "MSO NEST AND ROOST DATABASE.csv")
@@ -56,6 +56,7 @@ void processDocFile(docxFile) {
 	header = getDocumentHeader(zip)
 	body = getDocumentBody(zip)
 	dto = new NestDto()
+	dto.originalFile = docxFile.getName()
 	parseHeader(header, dto)
 	parseBody(body, dto)
 	writeResult(dto)
@@ -92,7 +93,7 @@ void parseBody(body, dto) {
 }
 
 void writeHeader() {
-	String header = "Forest,District,Mtn. Range,Date measured,PAC Name,PAC Number,Observation type (Nest or Roost),UTME,UTMN,ELEVATION,TOPGRAPHY,SLOPE ASPECT,SLOPE %,SLOPE DEGREES,SUBSTRATE TYPE,SUBSTRATE HEIGHT,NEST ASPECT,NEST OR ROOST HEIGHT (FT),TREE SPECIES,DIAMETER OF TREE"
+	String header = "Forest,District,Mtn. Range,Date measured,PAC Name,PAC Number,Observation type (Nest or Roost),UTME,UTMN,ELEVATION,TOPGRAPHY,SLOPE ASPECT,SLOPE %,SLOPE DEGREES,SUBSTRATE TYPE,SUBSTRATE HEIGHT,NEST ASPECT,NEST OR ROOST HEIGHT (FT),TREE SPECIES,DIAMETER OF TREE,Original File"
 	writeToFile(header)
 }
 
@@ -258,6 +259,7 @@ public class NestDto {
 	String height
 	String treeSpecies
 	String treeDiameter
+	String originalFile
 	
 	String quote(value) {
 		if(value == null) {
@@ -288,6 +290,7 @@ public class NestDto {
 		builder.append(quote(nestAspect)).append(delimiter)
 		builder.append(quote(height)).append(delimiter)
 		builder.append(quote(treeSpecies)).append(delimiter)
-		builder.append(quote(treeDiameter))
+		builder.append(quote(treeDiameter)).append(delimiter)
+		builder.append(quote(originalFile))
 	}
 }
