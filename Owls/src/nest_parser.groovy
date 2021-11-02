@@ -185,18 +185,27 @@ void parseLocationTable(table, dto) {
 void parseDescriptionTable(table, dto) {
 	println("Parsing description table")
 	//row 1, column 1 = elevation
-	//row 2, column 1 = slopeAspect
+	//row 1, column 2 = slopeAspect
+	//row 2, column 1 = nestAspect
 	//row 2, column 2 = slopePercent
 	//row 2, column 3 = slopeDegrees
 	dto.elevation = extractNumberFromString(table.tr[0].tc[0].text())
-	dto.slopeAspect = extractNumberFromString(table.tr[1].tc[0].text())
+	dto.slopeAspect = extractNumberFromString(table.tr[0].tc[1].text())
+	dto.nestAspect = extractNumberFromString(table.tr[1].tc[0].text())
 	dto.slopePercent = extractNumberFromString(table.tr[1].tc[1].text())
 	dto.slopeDegrees = extractNumberFromString(table.tr[1].tc[2].text())
 }
 
 void parseCompositionTable(table, dto) {
 	println("Parsing composition table")
-
+	//row 1, column 1 = treeSpecies
+	//row 1, column 2 = treeDiameter
+	//row 2, column 1 = substrateHeight
+	//row 2, column 2 = height (of nest)
+	dto.treeSpecies = parse(table.tr[0].tc[0].text(),"Tree Species :", null)
+	dto.treeDiameter = extractNumberFromString(table.tr[0].tc[1].text())
+	dto.substrateHeight = extractNumberFromString(table.tr[1].tc[0].text())
+	dto.height = extractNumberFromString(table.tr[1].tc[1].text())
 }
 
 String extractNumberFromString(value) {
