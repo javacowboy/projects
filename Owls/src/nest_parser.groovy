@@ -200,6 +200,9 @@ void parseCompositionTable(table, dto) {
 }
 
 String extractNumberFromString(value) {
+	if(value == null) {
+		return null
+	}
 	//result = value.replaceAll("[^\\d.]", "")
 	result = value.replaceAll("[^0-9.]", "")
 	//println(result)
@@ -232,7 +235,7 @@ void parseDistrict(text, dto) {
 }
 
 void parsePacInfo(text, dto) {
-	//sometimes the form has PAC # and sometimes only PAC 
+	//sometimes the form has PAC # and sometimes only PAC.  Sometime it has the name an number all merged together.
 	//PAC Name and Number also has PAC in it.
 	//Parse pac name, drop it's begin from the text, then parse for number
 	begin = "PAC Name and Number:"
@@ -241,7 +244,11 @@ void parsePacInfo(text, dto) {
 		println("Parsing PAC name")
 		text = parse(text, begin, end)
 		end = "PAC"
-		dto.pacName = parse(text, null, end)
+		if(text.contains(end)) {
+			dto.pacName = parse(text, null, end)
+		}else {
+			dto.pacName = text		
+		}
 	}
 	
 	//now search for PAC number
@@ -251,6 +258,16 @@ void parsePacInfo(text, dto) {
 		println("Parsing PAC number")
 		value = parse(text, begin, end)
 		dto.pacNumber = value.replace("#", "").trim()
+	}
+	
+	//if PAC number is null, the number could be part of the name
+	if(dto.pacNumber == null) {
+		text = dto.pacName
+		num = extractNumberFromString(text)
+		if(num != null) {
+			dto.pacNumber = num
+			dto.pacName = dto.pacName.replace(num, "").trim()
+		}
 	}
 }
 
