@@ -1,7 +1,5 @@
 #!/bin/env groovy
 
-import groovy.util.AntBuilder
-
 //vars
 //TOP_DIR = "../test" //my computer
 //TO_DIR = "../test/out" //my computer
